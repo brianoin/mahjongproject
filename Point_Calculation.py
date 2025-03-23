@@ -11,11 +11,13 @@ melds = game_data["melds"]
 winning_tile = game_data["winningTile"]
 win_type = game_data["winType"]
 yaku = game_data["yaku"]
-#需要新增自風/場風 self_wind/field_wind
+self_wind = game_data["self_wind"]
+field_wind = game_data["field_wind"]
 
 # 1. 計算符數 (基礎 20符)
 fu = 20
 
+#之後改名子
 OneNine_Tiles = {"一萬", "九萬", "一筒", "九筒", "一索", "九索" }
 Wind_Tiles = {"東", "南", "西", "北"}
 Word_Tiles = {"白", "發", "中"}
@@ -26,9 +28,12 @@ def calculate_fu(hand):
 
     # 雀頭加符
     pair = [tile for tile in hand if hand.count(tile) == 2][0]  # 找出將牌
-    if pair in Word_Tiles:  # 役牌將頭(名子之後改)
+    if pair in Word_Tiles: #如果是字牌+2
         fu += 2
-    if pair in Wind_Tiles and
+    if pair in self_wind: #如果是自風牌+2
+        fu+=2
+    if pair in field_wind: #如果是場風牌+2
+        fu+=2
 
     # 刻子、槓子加符
     for tile in set(hand):
@@ -66,6 +71,6 @@ def calculate_points(base_points, is_parent):
     return base_points * (6 if is_parent else 4)
 
 is_parent = game_data["player"] == 1  # 假設親家是玩家1
-final_points = calculate_points(base_points, is_parent)
+final_points = (calculate_points(base_points, is_parent) // 100 ) *100
 
 print(f"符數: {fu}, 翻數: {han}, 基本點數: {base_points}, 得點: {final_points}")

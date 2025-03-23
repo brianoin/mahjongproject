@@ -1,0 +1,99 @@
+{
+    "dealer": 1,
+    "dora": [
+        "back",
+        "back",
+        "back",
+        "Tiao1",
+        "back"
+    ],
+    "players": {
+        "1": {
+            "hand": [
+                "Tong8",
+                "Tiao2",
+                "Tong9",
+                "Tiao4",
+                "Tiao4",
+                "Tiao4",
+                "Tong7",
+                "Feng_E",
+                "Wan8",
+                "Feng_E",
+                "Feng_E",
+                "Wan5",
+                "Wan6"
+            ],
+            "discarded": [
+                "SanYuan_W",
+                "Wan9",
+                "Tong9",
+                "SanYuan_R",
+                "Tiao7",
+                "Tong8",
+                "Feng_N",
+                "Feng_W",
+                "Wan3",
+                "Banker",
+                "Feng_W"
+            ],
+            "melds": [],
+            "riichi": false,
+            "action_indicator": "thinking"
+        },
+        "2": {
+            "discarded": [
+                "Wan8",
+                "Tong1",
+                "Tong3",
+                "Tiao3",
+                "Tiao2",
+                "Tong8",
+                "SanYuan_G",
+                "Tong7",
+                "SanYuan_G",
+                "Tong9",
+                "Feng_E"
+            ],
+            "melds": [],
+            "riichi": false,
+            "action_indicator": "thinking"
+        },
+        "3": {
+            "discarded": [
+                "Tiao8",
+                "SanYuan_W",
+                "SanYuan_W",
+                "SanYuan_W",
+                "Feng_N",
+                "Tong7",
+                "Tiao9",
+                "Wan8",
+                "Tiao9",
+                "Wan2",
+                "Feng_N"
+            ],
+            "melds": [],
+            "riichi": false,
+            "action_indicator": "thinking"
+        },
+        "4": {
+            "discarded": [
+                "Tong6",
+                "Tong5",
+                "Tong5",
+                "Tiao2",
+                "Wan9",
+                "SanYuan_R",
+                "Tong7",
+                "Wan1",
+                "Wan7",
+                "Tiao1",
+                "Wan4"
+            ],
+            "melds": [],
+            "riichi": false,
+            "action_indicator": "thinking"
+        }
+    }
+}
