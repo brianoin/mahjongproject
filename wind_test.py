@@ -33,6 +33,7 @@ class MahjongDetection:
 
     def crop_and_rotate_regions(self, frame):
         """裁剪画面并旋转不同玩家的中间牌区域"""
+        
         # 定义每个玩家的中间牌区域
         Regions_Mid = {
             'Player1_Mid': {'region': frame[490:535, 790:1050].copy(), 'description': '1'},

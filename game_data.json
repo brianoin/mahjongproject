@@ -1,53 +1,39 @@
 {
-    "dealer": null,
-    "dora": [],
+    "Banker": 1,
+    "dora": [
+        "back",
+        "back",
+        "back",
+        "back",
+        "Tong3"
+    ],
     "players": {
         "1": {
             "hand": [],
             "discarded": [],
-            "melds": [
-                "Tong4"
-            ],
-            "riichi": false,
-            "wind": ""
+            "melds": []
         },
         "2": {
-            "discarded": [
-                "back",
-                "back",
-                "back"
-            ],
-            "melds": [
-                "Tiao7"
-            ],
-            "riichi": false,
-            "wind": ""
+            "hand": [],
+            "discarded": [],
+            "melds": []
         },
         "3": {
+            "hand": [],
             "discarded": [
-                "Tong8",
-                "Tong7",
-                "Tong7",
-                "Tong9",
-                "Tong6",
-                "back",
-                "back"
+                "Feng_N"
             ],
-            "melds": [
-                "Wan8",
-                "SanYuan_R",
-                "Wan6",
-                "SanYuan_R",
-                "SanYuan_R"
-            ],
-            "riichi": false,
-            "wind": ""
+            "melds": []
         },
         "4": {
+            "hand": [],
             "discarded": [],
-            "melds": [],
-            "riichi": false,
-            "wind": ""
+            "melds": []
+        },
+        "1": {
+            "hand": [],
+            "discarded": [],
+            "melds": []
         }
     }
 }
