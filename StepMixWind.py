@@ -11,9 +11,10 @@ class MahjongDetection:
         """初始化 YOLO 模型"""
         self.mid_model = YOLO(mid_model_path)  # 行動指示燈模型
         self.tiles_model = YOLO(tiles_model_path)  # 麻將牌偵測模型
-        self.json_file_path = json_file_path
+        self.players_winds = {} #玩家風位儲存
+        self.json_file_path = json_file_path #json檔儲存路徑
         self.previous_turn = None  # 記錄上一位玩家
-        self.init_json()
+        self.init_json() #json檔初始化
         
     def init_json(self):
         """初始化 JSON 檔案，如果存在則刪除舊檔案，創建新的空白檔案"""
@@ -28,10 +29,10 @@ class MahjongDetection:
                 "Banker": None,  # 初始無莊家
                 "dora": [],
                 "players": {
-                    "1": {"hand": [], "discarded": [], "melds": []},
-                    "2": {"discarded": [], "melds": []},
-                    "3": {"discarded": [], "melds": []},
-                    "4": {"discarded": [], "melds": []}
+                    "1": {"Wind":[], "Riichi":[], "hand": [], "discarded": [], "melds": []},
+                    "2": {"Wind":[], "Riichi":[], "discarded": [], "melds": []},
+                    "3": {"Wind":[], "Riichi":[], "discarded": [], "melds": []},
+                    "4": {"Wind":[], "Riichi":[], "discarded": [], "melds": []}
                 }
             }
 
@@ -42,7 +43,7 @@ class MahjongDetection:
 
         except Exception as e:
             print(f"初始化 JSON 時發生錯誤: {e}")
-
+            
     def crop_regions(self, frame):
         """裁剪所有區域"""
         Regions_Mid = {
@@ -82,28 +83,39 @@ class MahjongDetection:
         }
 
         return Regions_Mid, Regions_Tiles, Regions_Tiles_Dora
-
-    def detect_action_light(self, frame):
-        """偵測行動指示燈"""
+    
+    def detect_mid(self, frame):
+        """偵測莊家、未立直標記與行動指示燈"""
         Regions_Mid, _, _ = self.crop_regions(frame)
-        action_player = None
-
+        banker = None         # 儲存莊家的偵測結果
+        riichi = {}     # 儲存未立直的偵測結果
+        step = None  # 儲存行動玩家的編號
+        
         for player_key, player_info in Regions_Mid.items():
             player_num = int(player_info['description'])  # 玩家編號
             results = self.mid_model(player_info['region'])
+            
+            riichi[str(player_num)] = "true"
 
+            # 遍歷所有偵測到的物體
             for result in results:
                 for box in result.boxes.data:
                     x1, y1, x2, y2, conf, cls = box
                     class_name = self.mid_model.model.names[int(cls)]
-                    if class_name == 'step' and conf > 0.5:
-                        action_player = player_num
-                        break
-                if action_player:
-                    break
+                    
+                    if conf > 0.5:  # 設定信心值閾值
+                        # 偵測莊家
+                        if class_name == 'Banker':
+                            banker = player_num
+                        # 偵測未立直
+                        elif class_name == 'UnRiichi':
+                            riichi[str(player_num)] = "false"
+                        # 偵測行動指示燈
+                        elif class_name == 'step':
+                            step = player_num
 
-        return action_player
-
+        return banker, riichi, step
+    
     def detect_tiles(self, frame, step):
         """偵測對應的 Regions_Tiles 並進行麻將牌辨識"""
         _, Regions_Tiles, _ = self.crop_regions(frame)
@@ -145,10 +157,33 @@ class MahjongDetection:
                     dora_tiles.append(class_name)
 
         return dora_tiles
+    
+    def determine_winds(self, banker):
+        """根据庄家描述确定所有玩家的风位"""
+        wind_order = ["東", "南", "西", "北"]
 
-    def update_json(self, step, detected_tiles, dora_tiles):
+        # 将庄家的 description 转换为整数
+        dealer_index = banker - 1  # '1' -> 0, '2' -> 1, '3' -> 2, '4' -> 3
+
+        # 计算所有玩家风位
+        self.players_winds = {str(i + 1): wind_order[(i - dealer_index) % 4] for i in range(4)}
+        
+    def update_json(self, frame):
         """更新 JSON 檔案中的部分資料，確保不覆蓋整個檔案，只修改必要的部分"""
         try:
+            
+            banker, riichi, step = self.detect_mid(frame)
+        
+            if step is None:
+                print("無法獲得有效的step，跳過更新")
+                return
+
+            self.determine_winds(banker)
+            
+            # 偵測資料
+            detected_tiles = self.detect_tiles(frame, step)  # 偵測當前玩家的牌
+            dora_tiles = self.detect_dora(frame)  # 偵測寶牌
+        
             # 讀取現有 JSON 檔案
             with open(self.json_file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -157,7 +192,10 @@ class MahjongDetection:
             player_key = str(step)
 
             if player_key == "1":
+                print(riichi)
                 data["players"][player_key]["hand"] = detected_tiles.get("player1_hand", [])
+                data["players"][player_key]["Wind"] = self.players_winds.get(player_key, [])
+                data["players"][player_key]["Riichi"] = riichi.get(player_key, [])
                 new_discarded = detected_tiles.get("player1_discard", [])
                 prev_discarded = data["players"][player_key]["discarded"]
 
@@ -166,6 +204,8 @@ class MahjongDetection:
                 data["players"][player_key]["melds"] = detected_tiles.get("player1_melds", [])
             
             elif player_key in ["2", "3", "4"]:
+                data["players"][player_key]["Wind"] = self.players_winds.get(player_key, [])
+                data["players"][player_key]["Riichi"] = riichi.get(player_key, [])
                 new_discarded = detected_tiles.get(f"player{player_key}_discard", [])
                 prev_discarded = data["players"][player_key]["discarded"]
 
@@ -175,6 +215,7 @@ class MahjongDetection:
 
             # 更新寶牌區域
             data["dora"] = dora_tiles
+            data["Banker"] = banker
 
             # 將更新後的資料寫回 JSON 檔案
             with open(self.json_file_path, 'w', encoding='utf-8') as f:
@@ -208,35 +249,8 @@ if __name__ == "__main__":
         current_time = time.time()
 
         if current_time - last_detect_time >= detection_interval:
-            step = detector.detect_action_light(frame)
 
-            if step:
-                # ✅ **如果行動指示燈變更，先偵測上一位玩家的牌**
-                if previous_turn and previous_turn != step:
-                    print(f"🔄 行動指示燈變更，補偵測上一位玩家 {previous_turn} 的牌...")
-                    previous_tiles = detector.detect_tiles(frame, previous_turn)
-                    for key, tiles in previous_tiles.items():
-                        print(f"  {key}: {tiles}")
-
-                    # ✅ 偵測寶牌
-                    dora_tiles = detector.detect_dora(frame)
-                    print(f"📌 寶牌區域偵測到的牌: {dora_tiles}")
-
-                # ✅ **偵測當前玩家的牌**
-                detected_tiles = detector.detect_tiles(frame, step)
-                print(f"🎲 目前輪到玩家 {step}，偵測到的牌：")
-                for key, tiles in detected_tiles.items():
-                    print(f"  {key}: {tiles}")
-
-                # ✅ **偵測寶牌**
-                dora_tiles = detector.detect_dora(frame)
-                print(f"📌 寶牌區域偵測到的牌: {dora_tiles}")
-
-                # ✅ **使用 update_json() 來儲存數據**
-                detector.update_json(step, detected_tiles, dora_tiles)
-
-                # ✅ **記錄這次的行動玩家**
-                previous_turn = step
+            detector.update_json(frame)
 
             last_detect_time = current_time
 
