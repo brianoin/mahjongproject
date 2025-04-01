@@ -1,68 +1,77 @@
 import tkinter as tk
 from tkinter import ttk
-import subprocess
-from detection import MahjongDetection
-from analysis import MahjongAnalyzer
+import cv2
+import json
+from Detection_Test2 import MahjongDetection
+from PIL import Image, ImageTk
 
-class MahjongAnalyzerUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("麻將分析系統")
-        self.root.geometry("1200x800")
-        self.root.configure(bg="#2c3e50")
+def update_frame():
+    ret, frame = cap.read()
+    if ret:
+        detected_frame = MahjongDetection(frame)
+        detected_frame = cv2.cvtColor(detected_frame, cv2.COLOR_BGR2RGB)
+        img_detected = ImageTk.PhotoImage(Image.fromarray(detected_frame))
         
-        self.detection_process = None  # 用來存 `detection.py` 的執行狀態
+        canvas_detected.create_image(0, 0, anchor=tk.NW, image=img_detected)
+        canvas_detected.img_tk = img_detected
+        
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img_original = ImageTk.PhotoImage(Image.fromarray(frame))
+        
+        canvas_original.create_image(0, 0, anchor=tk.NW, image=img_original)
+        canvas_original.img_tk = img_original
+    
+    update_info()
+    root.after(30, update_frame)
 
-        self.setup_styles()
-        self.create_widgets()
+def update_info():
+    try:
+        with open("mahjong_data.json", "r", encoding="utf-8") as file:
+            data = json.load(file)
+        
+        dealer_label.config(text=f"莊家: 玩家 {data['Banker']}")
+        wind_text = "\n".join([f"玩家 {p} 風位: {w}" for p, w in data["players"].items()])
+        wind_label.config(text=wind_text)
+        dora_label.config(text=f"寶牌: {data['dora']}")
+    except Exception as e:
+        print("讀取 JSON 失敗:", e)
 
-    def setup_styles(self):
-        """設定 UI 樣式"""
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure("TButton", font=("Arial", 12), padding=10, background="#3498db")
-        style.configure("TLabel", font=("Arial", 12), padding=5, background="#2c3e50", foreground="white")
-        style.configure("TFrame", background="#2c3e50")
+root = tk.Tk()
+root.title("日麻小助手")
+root.geometry("1300x800")
 
-    def create_widgets(self):
-        """建立 UI 元件"""
-        main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+frame_top = tk.Frame(root)
+frame_top.pack(pady=10)
 
-        control_frame = ttk.Frame(main_frame)
-        control_frame.pack(fill=tk.X, padx=10, pady=10)
+button_start = ttk.Button(frame_top, text="開始辨識", command=lambda: print("開始辨識"))
+button_start.grid(row=0, column=0, padx=10)
 
-        # 開始即時辨識按鈕
-        self.start_detection_btn = ttk.Button(control_frame, text="開始即時辨識", command=self.start_real_time_detection)
-        self.start_detection_btn.grid(row=0, column=0, padx=10, pady=10)
+button_stop = ttk.Button(frame_top, text="結束辨識", command=lambda: print("結束辨識"))
+button_stop.grid(row=0, column=1, padx=10)
 
-        # 停止即時辨識按鈕
-        self.stop_detection_btn = ttk.Button(control_frame, text="停止辨識", command=self.stop_real_time_detection, state=tk.DISABLED)
-        self.stop_detection_btn.grid(row=0, column=1, padx=10, pady=10)
+info_frame = tk.Frame(root)
+info_frame.pack(side=tk.LEFT, padx=20)
 
-        # 狀態欄
-        self.status_var = tk.StringVar(value="就緒")
-        status_bar = ttk.Label(self.root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
-        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+dealer_label = tk.Label(info_frame, text="莊家: 未知", font=("Arial", 14))
+dealer_label.pack(anchor="w")
 
-    def start_real_time_detection(self):
-        """啟動即時辨識 (執行 detection.py)"""
-        if self.detection_process is None:
-            self.detection_process = subprocess.Popen(["python", "detection.py"])  # 啟動辨識程式
-            self.status_var.set("即時辨識運行中...")
-            self.start_detection_btn.config(state=tk.DISABLED)
-            self.stop_detection_btn.config(state=tk.NORMAL)
+wind_label = tk.Label(info_frame, text="風位: 未知", font=("Arial", 14))
+wind_label.pack(anchor="w")
 
-    def stop_real_time_detection(self):
-        """停止即時辨識"""
-        if self.detection_process is not None:
-            self.detection_process.terminate()  # 終止辨識程式
-            self.detection_process = None
-            self.status_var.set("即時辨識已停止")
-            self.start_detection_btn.config(state=tk.NORMAL)
-            self.stop_detection_btn.config(state=tk.DISABLED)
+dora_label = tk.Label(info_frame, text="寶牌: 未知", font=("Arial", 14))
+dora_label.pack(anchor="w")
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = MahjongAnalyzerUI(root)
-    root.mainloop()
+canvas_frame = tk.Frame(root)
+canvas_frame.pack()
+
+canvas_original = tk.Canvas(canvas_frame, width=640, height=480)
+canvas_original.grid(row=0, column=0, padx=10)
+canvas_detected = tk.Canvas(canvas_frame, width=640, height=480)
+canvas_detected.grid(row=0, column=1, padx=10)
+
+cap = cv2.VideoCapture(0)
+update_frame()
+
+root.mainloop()
+cap.release()
+cv2.destroyAllWindows()
