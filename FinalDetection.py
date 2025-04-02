@@ -9,16 +9,20 @@ import os
 class MahjongDetection:
     def __init__(self, mid_model_path, tiles_model_path, json_file_path):
         """初始化 YOLO 模型"""
+        self.round_wind = "東"
         self.mid_model = YOLO(mid_model_path)  # 行動指示燈模型
         self.tiles_model = YOLO(tiles_model_path)  # 麻將牌偵測模型
         self.players_winds = {} #玩家風位儲存
-        self.json_file_path = json_file_path #json檔儲存路徑
         self.previous_step = None  # 記錄上一位玩家
+        self.json_file_path = json_file_path #json檔儲存路徑
         self.init_json() #json檔初始化
-        self.melds_length = 0
-        self.melds_length_hand = 0
-        
-        
+        self.melds_length = 0 #副露長度
+        self.melds_length_hand = 0 #副露長度，專門計算手牌用
+        self.banker_history = []
+        self.initial_banker = None #紀錄最初的莊家
+        self.current_banker = None
+        self.no_banker_count = 0
+
     def init_json(self):
         """初始化 JSON 檔案，如果存在則刪除舊檔案，創建新的空白檔案"""
         try:
@@ -29,6 +33,7 @@ class MahjongDetection:
 
             # 創建新的空白 JSON 檔案
             data = {
+                "field_wind": self.round_wind,
                 "Banker": None,  # 初始無莊家
                 "dora": [],
                 "players": {
@@ -270,16 +275,57 @@ class MahjongDetection:
         # 计算所有玩家风位
         self.players_winds = {str(i + 1): wind_order[(i - dealer_index) % 4] for i in range(4)}
         
+    def update_banker(self, banker): #未測試
+        """更新莊家資訊並檢查是否需要變更場風"""
+        
+        if banker:
+            self.no_banker_count = 0
+            if self.initial_banker is None:
+                self.initial_banker = banker  # 記錄最初的莊家
+            
+            if banker != self.current_banker:
+                self.banker_history.append(banker)
+                self.current_banker = banker
+            
+            # **如果莊家輪回最初的玩家，則改變場風**
+            if len(set(self.banker_history)) >= 4 and self.current_banker == self.initial_banker:
+                self.change_round_wind()
+                self.banker_history.clear()  
+                self.banker_history.append(self.current_banker)
+        else:
+            self.no_banker_count += 1  # **未偵測到莊家，累積計數**
+            print(f"未偵測到莊家 {self.no_banker_count} 次")
+
+            # **4 次沒偵測到莊家 → 進入新的一局**
+            if self.no_banker_count >= 4:
+                self.init_json()
+
+            # **20 次沒偵測到莊家 → 進入新的一場**
+            if self.no_banker_count >= 20:
+                self.__init__()
+
+        return self.banker_history
+    
+    def change_round_wind(self): #未測試
+        """改變場風"""
+        wind_order = ["東", "南", "西", "北"]  # 假設有西風戰
+        current_index = wind_order.index(self.round_wind)
+        
+        if current_index < len(wind_order) - 1:
+            self.round_wind = wind_order[current_index + 1]
+            
     def update_json(self, frame):
         """更新 JSON 檔案中的部分資料，確保不覆蓋整個檔案，只修改必要的部分"""
         try:
             
             banker, riichi, step = self.detect_mid(frame)
-        
+            
+            self.update_banker(banker)
+            
             if step is None:
                 print("無法獲得有效的step，跳過更新")
                 return
-
+            
             self.determine_winds(banker)
             
             # 偵測資料
@@ -323,7 +369,6 @@ class MahjongDetection:
             # **比較新舊棄牌數量，選擇較多的那個**
             data["players"][player_key]["discarded"] = new_discarded if len(new_discarded) >= len(prev_discarded) else prev_discarded
 
-            # 更新寶牌區域
             data["Banker"] = banker
 
             # 將更新後的資料寫回 JSON 檔案
@@ -343,7 +388,8 @@ def capture_screen(region=None):
     with mss.mss() as sct:
         monitor = region if region else sct.monitors[1]
         img = sct.grab(monitor)
-        return cv2.cvtColor(np.array(img), cv2.COLOR_BGRA2BGR)
+        frame = cv2.cvtColor(np.array(img), cv2.COLOR_BGRA2BGR)
+        return frame
 
 if __name__ == "__main__":
     detector = MahjongDetection(
@@ -353,19 +399,17 @@ if __name__ == "__main__":
     )
     
     last_detect_time = time.time()
-    detection_interval = 1
+    detection_interval = 0.5
 
     while True:
         frame = capture_screen(region={"top": 0, "left": 0, "width": 1920, "height": 1080})
         current_time = time.time()
 
         if current_time - last_detect_time >= detection_interval:
-
             detector.update_json(frame)
-
+            
             last_detect_time = current_time
 
-        cv2.imshow("Screen Capture", frame)
         if cv2.waitKey(1) == ord("q"):
             print("❌ 程式結束...")
             break
