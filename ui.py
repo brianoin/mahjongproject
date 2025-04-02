@@ -2,13 +2,13 @@ import tkinter as tk
 from tkinter import ttk
 import cv2
 import json
-from FinalDetection import MahjongDetection  # 更新為 FinalDetection
+from FinalDetection import MahjongDetection  
 from PIL import Image, ImageTk
 
 def update_frame():
     ret, frame = cap.read()
     if ret:
-        detected_frame = MahjongDetection(frame)  # 替換為 FinalDetection 內的函數
+        detected_frame = MahjongDetection(frame) 
         detected_frame = cv2.cvtColor(detected_frame, cv2.COLOR_BGR2RGB)
         img_detected = ImageTk.PhotoImage(Image.fromarray(detected_frame))
         
@@ -26,7 +26,7 @@ def update_frame():
 
 def update_info():
     try:
-        with open("mahjong_data.json", "r", encoding="utf-8") as file:
+        with open("C:\mahjongproject\game_data.json", "r", encoding="utf-8") as file:
             data = json.load(file)
         
         dealer_label.config(text=f"莊家: 玩家 {data['Banker']}")
@@ -36,6 +36,17 @@ def update_info():
     except Exception as e:
         print("讀取 JSON 失敗:", e)
 
+
+
+def start_detection():
+    global running
+    running = True
+    update_frame()
+
+def stop_detection():
+    global running
+    running = False 
+
 root = tk.Tk()
 root.title("日麻小助手")
 root.geometry("1300x800")
@@ -43,10 +54,10 @@ root.geometry("1300x800")
 frame_top = tk.Frame(root)
 frame_top.pack(pady=10)
 
-button_start = ttk.Button(frame_top, text="開始辨識", command=lambda: print("開始辨識"))
+button_start = ttk.Button(frame_top, text="開始辨識", command = start_detection)
 button_start.grid(row=0, column=0, padx=10)
 
-button_stop = ttk.Button(frame_top, text="結束辨識", command=lambda: print("結束辨識"))
+button_stop = ttk.Button(frame_top, text="結束辨識", command = stop_detection)
 button_stop.grid(row=0, column=1, padx=10)
 
 info_frame = tk.Frame(root)
