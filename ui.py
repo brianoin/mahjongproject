@@ -2,13 +2,13 @@ import tkinter as tk
 from tkinter import ttk
 import cv2
 import json
-from Detection_Test2 import MahjongDetection
+from FinalDetection import MahjongDetection  # 更新為 FinalDetection
 from PIL import Image, ImageTk
 
 def update_frame():
     ret, frame = cap.read()
     if ret:
-        detected_frame = MahjongDetection(frame)
+        detected_frame = MahjongDetection(frame)  # 替換為 FinalDetection 內的函數
         detected_frame = cv2.cvtColor(detected_frame, cv2.COLOR_BGR2RGB)
         img_detected = ImageTk.PhotoImage(Image.fromarray(detected_frame))
         
