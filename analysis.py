@@ -2,6 +2,7 @@ import os
 import cv2
 import json
 from collections import defaultdict, Counter
+from FinalDetection import MahjongDetection
 
 class MahjongAnalyzer:
     def calculate_discard_danger(self, visible_tiles):

@@ -15,7 +15,7 @@ def update_info():
             data = json.load(file)
         
         dealer_label.config(text=f"莊家: 玩家 {data['Banker']}")
-        wind_text = "\n".join([f"玩家 {p} 風位: {w}" for p, w in data["field_wind"].items()])
+        wind_text = "\n".join([f"玩家 {p} 風位: {w}" for p, w in data["player"].items()])
         wind_label.config(text=wind_text)
         dora_label.config(text=f"寶牌: {data['dora']}")
     
@@ -33,7 +33,8 @@ def start_detection():
     # **執行辨識程式（確保路徑正確）**
     if process is None:
         process = subprocess.Popen(["python", r"C:/mahjongproject/FinalDetection.py"])
-
+        process = subprocess.Popen(["python", r"C:\Users\1\OneDrive\桌面\mahjongproject\analysis.py"])
+        
 def stop_detection():
     global running, process
     running = False  
