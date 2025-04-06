@@ -59,8 +59,34 @@ class MahjongAnalyzer:
                 safest_tile = tile
         return safest_tile
 
+    def get_remaining_tiles(self, game_state):
+        all_tiles = [f"{i}{suit}" for suit in ['m', 'p', 's'] for i in range(1, 10)] + ['E', 'S', 'W', 'N', 'P', 'F', 'C']
+        full_tile_count = {tile: 4 for tile in all_tiles}
+
+        # 計算所有已出現的牌（手牌 + 捨牌 + 副露）
+        seen_tiles = []
+
+        for player in game_state["players"]:
+            seen_tiles.extend(player.get("hand", []))
+            seen_tiles.extend(player.get("discards", []))
+            for meld in player.get("melds", []):
+                seen_tiles.extend(meld)
+
+        # 統計已經出現幾張
+        seen_counter = Counter(seen_tiles)
+
+        # 扣掉已經出現的數量
+        remaining = {}
+        for tile in all_tiles:
+            remaining_count = full_tile_count[tile] - seen_counter.get(tile, 0)
+            if remaining_count > 0:
+                remaining[tile] = remaining_count
+
+        return remaining
+
+
 # 實際資料應從辨識結果載入
-with open("game_state.json", "r", encoding="utf-8") as f:
+with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8") as f:
     game_state = json.load(f)
 
 analyzer = MahjongAnalyzer()
@@ -77,15 +103,18 @@ visible_tiles = {
 
 danger_map = analyzer.calculate_discard_danger(visible_tiles)
 safest_discard = analyzer.get_safest_discard(visible_tiles["self_hand"], visible_tiles)
+remaining_tiles = analyzer.get_remaining_tiles(game_state)
 
 # 加入分析結果
-game_state["analysis"] = {
+game_state["analysis"]["remaining_tiles"] = {
+
+    "remaining_type":remaining_tiles,
     "discard_danger": danger_map,
     "suggested_discard": safest_discard
 }
 
 # 輸出更新後的 JSON
-output_path = "game_state.json"
+output_path = r"C:/mahjongproject/game_data.json"
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(game_state, f, ensure_ascii=False, indent=2)
 
