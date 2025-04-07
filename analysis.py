@@ -85,25 +85,42 @@ class MahjongAnalyzer:
         return remaining
 
 
-# 實際資料應從辨識結果載入
-with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8") as f:
-    game_state = json.load(f)
+def update_info():
+    """定時讀取 JSON 檔案，更新 UI 上的資訊"""
+    try:
+        with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8") as file:
+            data = json.load(file)
 
-analyzer = MahjongAnalyzer()
+        hand = data["players"]["1"]["hand"]
+        melds = data["players"]["1"]["melds"]
+        riichi = data["players"]["1"]["Riichi"]
+        self_wind = data["players"]["1"]["Wind"]
+        discarded = data["players"]["1"]["discarded"]
+        total_tiles = data["total_tiles"]
+        banker = data["Banker"]
+        dora = data["dora"]
+        field_wind = data["field_wind"]
+
+        return data
+    except Exception as e:
+        print("讀取 JSON 失敗:", e)
+    
+
+game_state = update_info()
 
 # 建立 visible_tiles 結構
 visible_tiles = {
     "discards": {
-        "p2": game_state["players"][1]["discards"],
-        "p3": game_state["players"][2]["discards"],
-        "p4": game_state["players"][3]["discards"]
+        "p2": game_state["players"][2]["discards"],
+        "p3": game_state["players"][3]["discards"],
+        "p4": game_state["players"][4]["discards"]
     },
-    "self_hand": game_state["players"][0]["hand"]
+    "self_hand": game_state["players"][1]["hand"]
 }
 
-danger_map = analyzer.calculate_discard_danger(visible_tiles)
-safest_discard = analyzer.get_safest_discard(visible_tiles["self_hand"], visible_tiles)
-remaining_tiles = analyzer.get_remaining_tiles(game_state)
+danger_map = MahjongAnalyzer.calculate_discard_danger(visible_tiles)
+safest_discard = MahjongAnalyzer.get_safest_discard(visible_tiles["self_hand"], visible_tiles)
+remaining_tiles = MahjongAnalyzer.get_remaining_tiles(game_state)
 
 # 加入分析結果
 game_state["analysis"]["remaining_tiles"] = {

@@ -5,49 +5,66 @@ import subprocess
 from PIL import Image,ImageTk
 from FinalDetection import MahjongDetection
 
+# UI 介面設定
+root = tk.Tk()
+root.title("日麻小助手")
+root.geometry("1280x720")
+
 running = False
 process = None
+process1 = None
+
+banker_var = tk.StringVar()
+dora_var = tk.StringVar()
+field_wind_var = tk.StringVar()
+
+info_frame = ttk.LabelFrame(root , text="遊戲資訊", padding=10)
+info_frame.pack(padx=10, pady=10, fill="both", expand= True)
+
+#顯示資訊的label
+for var in [banker_var, field_wind_var, dora_var]:
+    ttk.Label(info_frame, textvariable=var, font=("Arial", 12), wraplength=500, anchor="w", justify="left").pack(anchor="w")
 
 def update_info():
-    """定時讀取 JSON 檔案，更新 UI 上的資訊"""
     try:
-        with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8") as file:
+        with open(r"C:/mahjongproject/game_data.json", "r", encoding="wtf-8")as  file:
             data = json.load(file)
-        
-        dealer_label.config(text=f"莊家: 玩家 {data['Banker']}")
-        wind_text = "\n".join([f"玩家 {p} 風位: {w}" for p, w in data["player"].items()])
-        wind_label.config(text=wind_text)
-        dora_label.config(text=f"寶牌: {data['dora']}")
-    
-    except Exception as e:
-        print("讀取 JSON 失敗:", e)
 
+        banker_id = str(data["Banker"])
+        player = data["players"].get(banker_id, {})
+
+        banker_var.set(f"莊家: 玩家 {banker_id}")
+        dora_var.set(f"寶牌: {'、'.join(data['dora'])}")
+        field_wind_var.set(f"場風: {player.get('field_wind', '未知')}")
+
+    except Exception as e:
+        print("讀取json失敗:", e)
+    
     if running:
-        root.after(500, update_info)  # 每 1 秒讀取一次 JSON
+        root.after(1000, update_info)
 
 def start_detection():
-    global running, process
+    global running, process,process1
     running = True
     update_info()  # 開始讀取 JSON
     
     # **執行辨識程式（確保路徑正確）**
     if process is None:
         process = subprocess.Popen(["python", r"C:/mahjongproject/FinalDetection.py"])
-        process = subprocess.Popen(["python", r"C:\Users\1\OneDrive\桌面\mahjongproject\analysis.py"])
-        
+    if process1 is None:
+        process1 = subprocess.Popen(["python", r"C:\Users\1\OneDrive\桌面\mahjongproject\analysis.py"])
+
 def stop_detection():
     global running, process
     running = False  
 
     # **關閉辨識程式**
     if process:
-        process.terminate()  # 終止辨識程式
+        process.terminate() # 終止辨識程式
         process = None
-
-# UI 介面設定
-root = tk.Tk()
-root.title("日麻小助手")
-root.geometry("1280x720")
+    if process1:
+        process1.terminate() # 終止辨識程式
+        process1 = None
 
 image = Image.open(r"C:\Users\1\OneDrive\桌面\mahjongproject\maxresdefault.jpg")
 bg_image = ImageTk.PhotoImage(image)
@@ -66,29 +83,5 @@ button_stop.grid(row=0, column=1, padx=10)
 
 info_frame = tk.Frame(root)
 info_frame.pack(pady=20)
-
-
-dealer_label = tk.Label(info_frame, text="莊家: 未知", font=("Arial", 14))
-dealer_label.pack(anchor="w")
-
-wind_label = tk.Label(info_frame, text="場風: 未知", font=("Arial", 14))
-wind_label.pack(anchor="w")
-
-dora_label = tk.Label(info_frame, text="寶牌: 未知", font=("Arial", 14))
-dora_label.pack(anchor="w")
-
-columns = ("筒","條","萬","字")
-tree = ttk.Treeview(root, columns=columns, show="headings")
-
-for col in columns:
-    tree.heading(col, text=col)
-
-data = [(info_frame),(info_frame),(info_frame),(info_frame)]  
-
-for item in data :
-    tree.insert("", tk.END, values=item)
-
-tree.pack()
-
 
 root.mainloop()
