@@ -63,7 +63,6 @@ class MahjongAnalyzer:
         all_tiles = [f"{i}{suit}" for suit in ['m', 'p', 's'] for i in range(1, 10)] + ['E', 'S', 'W', 'N', 'P', 'F', 'C']
         full_tile_count = {tile: 4 for tile in all_tiles}
 
-        # 計算所有已出現的牌（手牌 + 捨牌 + 副露）
         seen_tiles = []
 
         for player in game_state["players"]:
@@ -72,10 +71,8 @@ class MahjongAnalyzer:
             for meld in player.get("melds", []):
                 seen_tiles.extend(meld)
 
-        # 統計已經出現幾張
         seen_counter = Counter(seen_tiles)
 
-        # 扣掉已經出現的數量
         remaining = {}
         for tile in all_tiles:
             remaining_count = full_tile_count[tile] - seen_counter.get(tile, 0)
@@ -84,9 +81,37 @@ class MahjongAnalyzer:
 
         return remaining
 
+    def is_dangerous_tile(self, tile):
+        if tile[0].isdigit():
+            num = int(tile[0])
+            return 3 <= num <= 7
+        else:
+            return tile in ['P', 'F', 'C']
+
+    def estimate_opponent_tenpai_chance(self, visible_tiles, game_state):
+        tenpai_chance = {}
+        for idx, player_id in enumerate(["p2", "p3", "p4"], start=2):
+            player_data = game_state["players"][str(idx)]
+            discards = player_data.get("discards", [])
+            melds = player_data.get("melds", [])
+            riichi_declared = player_data.get("Riichi", False)
+
+            chance = 0
+            if riichi_declared:
+                chance += 80
+            if len(melds) > 0:
+                chance += 20
+            if len(discards) >= 6:
+                dangerous_discards = [t for t in discards if self.is_dangerous_tile(t)]
+                if len(dangerous_discards) >= 3:
+                    chance += 20
+
+            tenpai_chance[player_id] = min(chance, 100)
+
+        return tenpai_chance
+
 
 def update_info():
-    """定時讀取 JSON 檔案，更新 UI 上的資訊"""
     try:
         with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -108,32 +133,30 @@ def update_info():
 
 game_state = update_info()
 
-# 建立 visible_tiles 結構
 visible_tiles = {
     "discards": {
-        "p2": game_state["players"]["discards"],
-        "p3": game_state["players"]["discards"],
-        "p4": game_state["players"]["discards"]
+        "p2": game_state["players"]["2"]["discards"],
+        "p3": game_state["players"]["3"]["discards"],
+        "p4": game_state["players"]["4"]["discards"]
     },
-    "self_hand": game_state["players"][1]["hand"]
+    "self_hand": game_state["players"]["1"]["hand"]
 }
 
-danger_map = MahjongAnalyzer.calculate_discard_danger(visible_tiles)
-safest_discard = MahjongAnalyzer.get_safest_discard(visible_tiles["self_hand"], visible_tiles)
-remaining_tiles = MahjongAnalyzer.get_remaining_tiles(game_state)
+analyzer = MahjongAnalyzer()
+danger_map = analyzer.calculate_discard_danger(visible_tiles)
+safest_discard = analyzer.get_safest_discard(visible_tiles["self_hand"], visible_tiles)
+remaining_tiles = analyzer.get_remaining_tiles(game_state)
+tenpai_chances = analyzer.estimate_opponent_tenpai_chance(visible_tiles, game_state)
 
-# 加入分析結果
-game_state["analysis"]["remaining_tiles"] = {
-
-    "remaining_type":remaining_tiles,
+game_state["analysis"] = {
+    "remaining_tiles": remaining_tiles,
     "discard_danger": danger_map,
-    "suggested_discard": safest_discard
+    "suggested_discard": safest_discard,
+    "opponent_tenpai_chance": tenpai_chances
 }
 
-# 輸出更新後的 JSON
 output_path = r"C:/mahjongproject/game_data.json"
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(game_state, f, ensure_ascii=False, indent=2)
 
 print(f"已將分析結果寫入 {output_path}")
-

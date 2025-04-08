@@ -25,6 +25,12 @@ info_frame.pack(padx=10, pady=10, fill="both", expand= True)
 for var in [banker_var, field_wind_var, dora_var]:
     ttk.Label(info_frame, textvariable=var, font=("Arial", 12), wraplength=500, anchor="w", justify="left").pack(anchor="w")
 
+tenpai_p2_var = tk.StringVar()
+tenpai_p3_var = tk.StringVar()
+tenpai_p4_var = tk.StringVar()
+
+for var in [tenpai_p2_var, tenpai_p3_var, tenpai_p4_var]:
+    ttk.Label(info_frame, textvariable=var, font=("Arial", 12), wraplength=500, anchor="w", justify="left").pack(anchor="w")
 def update_info():
     try:
         with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8")as  file:
@@ -39,7 +45,18 @@ def update_info():
 
     except Exception as e:
         print("讀取json失敗:", e)
-    
+
+    # 加入顯示對手聽牌機率
+    try:
+        chances = data["analysis"]["opponent_tenpai_chance"]
+        tenpai_p2_var.set(f"下家(p2)聽牌機率: {chances.get('p2', 0)}%")
+        tenpai_p3_var.set(f"對家(p3)聽牌機率: {chances.get('p3', 0)}%")
+        tenpai_p4_var.set(f"上家(p4)聽牌機率: {chances.get('p4', 0)}%")
+    except:
+        tenpai_p2_var.set("下家(p2)聽牌機率: 無資料")
+        tenpai_p3_var.set("對家(p3)聽牌機率: 無資料")
+        tenpai_p4_var.set("上家(p4)聽牌機率: 無資料")
+        
     if running:
         root.after(1000, update_info)
 
@@ -55,7 +72,7 @@ def start_detection():
         process1 = subprocess.Popen(["python", r"C:\Users\1\OneDrive\桌面\mahjongproject\analysis.py"])
 
 def stop_detection():
-    global running, process
+    global running, process,process1
     running = False  
 
     # **關閉辨識程式**
