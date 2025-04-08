@@ -33,7 +33,7 @@ for var in [tenpai_p2_var, tenpai_p3_var, tenpai_p4_var]:
     ttk.Label(info_frame, textvariable=var, font=("Arial", 12), wraplength=500, anchor="w", justify="left").pack(anchor="w")
 def update_info():
     try:
-        with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8")as  file:
+        with open(r"D:/mahjongproject/game_data.json", "r", encoding="utf-8")as  file:
             data = json.load(file)
 
         banker_id = str(data["Banker"])
@@ -67,9 +67,9 @@ def start_detection():
     
     # **執行辨識程式（確保路徑正確）**
     if process is None:
-        process = subprocess.Popen(["python", r"C:/mahjongproject/FinalDetection.py"])
+        process = subprocess.Popen(["python", r"D:/mahjongproject/FinalDetection.py"])
     if process1 is None:
-        process1 = subprocess.Popen(["python", r"C:\Users\1\OneDrive\桌面\mahjongproject\analysis.py"])
+        process1 = subprocess.Popen(["python", r"D:/mahjongproject/analysis.py"])
 
 def stop_detection():
     global running, process,process1
@@ -83,7 +83,8 @@ def stop_detection():
         process1.terminate() # 終止辨識程式
         process1 = None
 
-image = Image.open(r"C:\Users\1\OneDrive\桌面\mahjongproject\maxresdefault.jpg")
+"這裡要修改不然圖片會擋住"
+image = Image.open(r"D:/mahjongproject/321.PNG")
 bg_image = ImageTk.PhotoImage(image)
 
 bg_label = tk.Label(root, image=bg_image)

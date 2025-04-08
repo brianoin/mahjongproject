@@ -113,7 +113,7 @@ class MahjongAnalyzer:
 
 def update_info():
     try:
-        with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8") as file:
+        with open(r"D:/mahjongproject/game_data.json", "r", encoding="utf-8") as file:
             data = json.load(file)
 
         hand = data["players"]["1"]["hand"]
@@ -148,15 +148,16 @@ safest_discard = analyzer.get_safest_discard(visible_tiles["self_hand"], visible
 remaining_tiles = analyzer.get_remaining_tiles(game_state)
 tenpai_chances = analyzer.estimate_opponent_tenpai_chance(visible_tiles, game_state)
 
-game_state["analysis"] = {
-    "remaining_tiles": remaining_tiles,
-    "discard_danger": danger_map,
-    "suggested_discard": safest_discard,
-    "opponent_tenpai_chance": tenpai_chances
-}
+"要寫到新的.json檔裡面"
+# game_state["analysis"] = {
+#     "remaining_tiles": remaining_tiles,
+#     "discard_danger": danger_map,
+#     "suggested_discard": safest_discard,
+#     "opponent_tenpai_chance": tenpai_chances
+# }
 
-output_path = r"C:/mahjongproject/game_data.json"
-with open(output_path, "w", encoding="utf-8") as f:
-    json.dump(game_state, f, ensure_ascii=False, indent=2)
+# output_path = r"D:/mahjongproject/game_data.json"
+# with open(output_path, "w", encoding="utf-8") as f:
+#     json.dump(game_state, f, ensure_ascii=False, indent=2)
 
-print(f"已將分析結果寫入 {output_path}")
+# print(f"已將分析結果寫入 {output_path}")

@@ -1,6 +1,8 @@
 {
     "field_wind": "東",
-    "Banker": 1,
+    "Total_tiles": 64,
+    "Banker": 2,
+    "Step": 3,
     "dora": [],
     "players": {
         "1": {
@@ -13,17 +15,20 @@
         "2": {
             "Wind": [],
             "Riichi": [],
-            "discarded": [
-                "Tiao2",
-                "Feng_S",
-                "Feng_W"
-            ],
+            "discarded": [],
             "melds": []
         },
         "3": {
             "Wind": [],
             "Riichi": [],
-            "discarded": [],
+            "discarded": [
+                "Tong3",
+                "Feng_E",
+                "Tong7",
+                "Tiao7",
+                "Feng_S",
+                "Wan7"
+            ],
             "melds": []
         },
         "4": {

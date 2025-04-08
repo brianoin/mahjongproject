@@ -14,14 +14,15 @@ class MahjongDetection:
         self.tiles_model = YOLO(tiles_model_path)  # 麻將牌偵測模型
         self.players_winds = {} #玩家風位儲存
         self.previous_step = None  # 記錄上一位玩家
-        self.json_file_path = json_file_path #json檔儲存路徑
-        self.init_json() #json檔初始化
+        self.json_file_path = json_file_path #json檔儲存路
         self.melds_length = 0 #副露長度
         self.melds_length_hand = 0 #副露長度，專門計算手牌用
         self.banker_history = []
         self.initial_banker = None #紀錄最初的莊家
         self.current_banker = None
         self.no_banker_count = 0
+        self.Total_tiles = 70
+        self.init_json() #json檔初始化
 
     def init_json(self):
         """初始化 JSON 檔案，如果存在則刪除舊檔案，創建新的空白檔案"""
@@ -31,10 +32,14 @@ class MahjongDetection:
                 os.remove(self.json_file_path)
                 print(f"舊的 JSON 檔案已刪除：{self.json_file_path}")
 
+            os.makedirs(os.path.dirname(self.json_file_path), exist_ok=True)
+
             # 創建新的空白 JSON 檔案
             data = {
                 "field_wind": self.round_wind,
+                "Total_tiles": self.Total_tiles,
                 "Banker": None,  # 初始無莊家
+                "Step": None,
                 "dora": [],
                 "players": {
                     "1": {"Wind":[], "Riichi":[], "hand": [], "discarded": [], "melds": []},
@@ -358,6 +363,7 @@ class MahjongDetection:
                 
             # 更新當前行動玩家的資料
             player_key = str(step)
+            data["Step"] = step
             
             if player_key == "1":
                 data["players"][player_key]["hand"] = detected_tiles.get("player1_hand", [])
@@ -370,7 +376,9 @@ class MahjongDetection:
             data["players"][player_key]["discarded"] = new_discarded if len(new_discarded) >= len(prev_discarded) else prev_discarded
 
             data["Banker"] = banker
-
+            
+            self.Total_tiles = 70 - sum(len(data["players"][str(player_id)]["discarded"]) for player_id in range(1, 5))
+            data["Total_tiles"] = self.Total_tiles
             # 將更新後的資料寫回 JSON 檔案
             with open(self.json_file_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
