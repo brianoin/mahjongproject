@@ -27,7 +27,7 @@ for var in [banker_var, field_wind_var, dora_var]:
 
 def update_info():
     try:
-        with open(r"C:/mahjongproject/game_data.json", "r", encoding="wtf-8")as  file:
+        with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8")as  file:
             data = json.load(file)
 
         banker_id = str(data["Banker"])

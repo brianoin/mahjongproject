@@ -111,9 +111,9 @@ game_state = update_info()
 # 建立 visible_tiles 結構
 visible_tiles = {
     "discards": {
-        "p2": game_state["players"][2]["discards"],
-        "p3": game_state["players"][3]["discards"],
-        "p4": game_state["players"][4]["discards"]
+        "p2": game_state["players"]["discards"],
+        "p3": game_state["players"]["discards"],
+        "p4": game_state["players"]["discards"]
     },
     "self_hand": game_state["players"][1]["hand"]
 }
