@@ -33,7 +33,7 @@ for var in [tenpai_p2_var, tenpai_p3_var, tenpai_p4_var]:
     ttk.Label(info_frame, textvariable=var, font=("Arial", 12), wraplength=500, anchor="w", justify="left").pack(anchor="w")
 def update_info():
     try:
-        with open(r"D:/mahjongproject/game_data.json", "r", encoding="utf-8")as  file:
+        with open(r"C:/mahjongproject/game_data.json", "r", encoding="utf-8")as  file:
             data = json.load(file)
 
         banker_id = str(data["Banker"])
@@ -45,9 +45,12 @@ def update_info():
 
     except Exception as e:
         print("讀取json失敗:", e)
-
+def update_info2():
     # 加入顯示對手聽牌機率
     try:
+        with open(r"C:/mahjongproject/analysis.json", "r", encoding="utf-8")as  file:
+            data = json.load(file)
+
         chances = data["analysis"]["opponent_tenpai_chance"]
         tenpai_p2_var.set(f"下家(p2)聽牌機率: {chances.get('p2', 0)}%")
         tenpai_p3_var.set(f"對家(p3)聽牌機率: {chances.get('p3', 0)}%")
@@ -57,19 +60,17 @@ def update_info():
         tenpai_p3_var.set("對家(p3)聽牌機率: 無資料")
         tenpai_p4_var.set("上家(p4)聽牌機率: 無資料")
         
-    if running:
-        root.after(1000, update_info)
-
 def start_detection():
     global running, process,process1
     running = True
     update_info()  # 開始讀取 JSON
+    update_info2()
     
     # **執行辨識程式（確保路徑正確）**
     if process is None:
-        process = subprocess.Popen(["python", r"D:/mahjongproject/FinalDetection.py"])
+        process = subprocess.Popen(["python", r"C:/mahjongproject/FinalDetection.py"])
     if process1 is None:
-        process1 = subprocess.Popen(["python", r"D:/mahjongproject/analysis.py"])
+        process1 = subprocess.Popen(["python", r"C:/mahjongproject/analysis.py"])
 
 def stop_detection():
     global running, process,process1
@@ -84,11 +85,12 @@ def stop_detection():
         process1 = None
 
 "這裡要修改不然圖片會擋住"
-image = Image.open(r"D:/mahjongproject/321.PNG")
+image = Image.open(r"C:\Users\1\OneDrive\桌面\mahjongproject\321.jpg")
 bg_image = ImageTk.PhotoImage(image)
 
 bg_label = tk.Label(root, image=bg_image)
 bg_label.place(relwidth=1, relheight=1)
+bg_label.lower()
 
 frame_top = tk.Frame(root)
 frame_top.pack(pady=10)
