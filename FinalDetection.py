@@ -295,7 +295,7 @@ class MahjongDetection:
             # **如果莊家輪回最初的玩家，則改變場風**
             if len(set(self.banker_history)) >= 4 and self.current_banker == self.initial_banker:
                 self.change_round_wind()
-                self.banker_history.clear()  
+                self.banker_history.clear()
                 self.banker_history.append(self.current_banker)
         else:
             self.no_banker_count += 1  # **未偵測到莊家，累積計數**
