@@ -1,0 +1,128 @@
+{
+    "remaining_tiles": {
+        "Feng_N": 1,
+        "Feng_S": 3,
+        "Feng_W": 1,
+        "SanYuan_W": 3,
+        "Tiao1": 4,
+        "Tiao2": 3,
+        "Tiao3": 2,
+        "Tiao4": 4,
+        "Tiao5": 3,
+        "Tiao6": 2,
+        "Tiao7": 1,
+        "Tiao9": 1,
+        "Tong1": 1,
+        "Tong2": 1,
+        "Tong3": 2,
+        "Tong4": 2,
+        "Tong5": 2,
+        "Tong6": 4,
+        "Tong7": 3,
+        "Tong8": 3,
+        "Tong9": 2,
+        "Wan1": 1,
+        "Wan2": 1,
+        "Wan3": 2,
+        "Wan4": 3,
+        "Wan5": 1,
+        "Wan6": 1,
+        "Wan7": 2,
+        "Wan8": 1,
+        "Wan9": 1
+    },
+    "tenpai_prediction": {
+        "p2": {
+            "is_tenpai": "true",
+            "wait_tiles": {
+                "Feng_N": 0.56,
+                "Feng_S": 1.68,
+                "SanYuan_W": 1.92,
+                "Tiao1": 3.2,
+                "Tiao2": 2.1,
+                "Tiao3": 1.68,
+                "Tiao4": 4.8,
+                "Tiao5": 2.52,
+                "Tiao6": 1.68,
+                "Tiao7": 0.67,
+                "Tong2": 1.0,
+                "Tong3": 1.92,
+                "Tong4": 1.92,
+                "Tong5": 1.92,
+                "Tong6": 4.8,
+                "Tong7": 2.52,
+                "Tong8": 2.1,
+                "Wan6": 0.84,
+                "Wan8": 0.7,
+                "Wan9": 0.56
+            }
+        },
+        "p3": {
+            "is_tenpai": "true",
+            "wait_tiles": {
+                "Feng_S": 1.68,
+                "Feng_W": 0.56,
+                "SanYuan_W": 1.92,
+                "Tiao1": 3.2,
+                "Tiao2": 2.1,
+                "Tiao4": 4.8,
+                "Tiao5": 2.52,
+                "Tiao7": 0.67,
+                "Tong1": 0.56,
+                "Tong2": 1.0,
+                "Tong3": 1.92,
+                "Tong4": 1.92,
+                "Tong5": 1.92,
+                "Tong6": 4.8,
+                "Tong7": 2.52,
+                "Tong8": 2.1,
+                "Tong9": 1.12,
+                "Wan3": 1.34,
+                "Wan4": 2.52,
+                "Wan6": 0.84,
+                "Wan7": 1.68
+            }
+        },
+        "p4": {
+            "is_tenpai": "false",
+            "wait_tiles": {
+                "Feng_S": 1.68,
+                "SanYuan_W": 1.92,
+                "Tiao1": 3.84,
+                "Tiao2": 2.52,
+                "Tiao3": 2.02,
+                "Tiao4": 5.76,
+                "Tiao5": 3.02,
+                "Tiao6": 2.02,
+                "Tong1": 0.56,
+                "Tong2": 1.0,
+                "Tong3": 1.92,
+                "Tong4": 1.92,
+                "Tong5": 1.92,
+                "Tong6": 4.8,
+                "Tong7": 2.52,
+                "Tong8": 2.1,
+                "Tong9": 1.12,
+                "Wan2": 0.56,
+                "Wan3": 1.34,
+                "Wan4": 2.52
+            }
+        }
+    },
+    "danger_estimation": {
+        "safe_discards": [
+            "Wan2",
+            "Tiao7",
+            "Wan3"
+        ],
+        "danger_score": {
+            "Tong5": 5.96,
+            "SanYuan_W": 6.06,
+            "Tiao7": 0.72,
+            "Tong3": 5.96,
+            "Wan3": 1.44,
+            "Tong4": 5.96,
+            "Wan2": 0.33
+        }
+    }
+}
