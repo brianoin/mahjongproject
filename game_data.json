@@ -1,122 +1,136 @@
 {
-    "field_wind": "東",
-    "Total_tiles": 12,
-    "Banker": 4,
+    "field_wind": "Feng_E",
+    "Total_tiles": 0,
+    "Banker": 3,
     "Step": 1,
     "dora": [
+        "Tiao5",
         "back",
         "back",
         "back",
-        "back",
-        "Tong1"
+        "back"
     ],
     "players": {
         "1": {
-            "Wind": "南",
-            "Riichi": "false",
-            "hand": [
-                "Tong5",
-                "Tong5",
-                "SanYuan_W",
-                "Tiao7",
-                "Tong3",
-                "Wan3",
-                "Tong4",
-                "Wan2",
-                "Tong3",
-                "Tong4"
-            ],
-            "discarded": [
-                "Tiao5",
-                "Tiao2",
-                "Tong9",
-                "Tiao8",
-                "Tiao6",
-                "Tiao8",
-                "Tong7",
-                "SanYuan_R",
-                "Tiao7",
-                "Tong8",
-                "Feng_S",
-                "Feng_N",
-                "Wan6",
-                "SanYuan_G",
-                "Tong1"
-            ],
-            "melds": [
-                "Tong2",
-                "Tong2",
-                "Tong2"
-            ]
-        },
-        "2": {
-            "Wind": "西",
+            "Wind": "Feng_W",
             "Riichi": "true",
-            "discarded": [
+            "hand": [
+                "Tong9",
+                "Wan5_R",
+                "Tong4",
+                "Tong4",
+                "Tiao8",
                 "Tiao8",
                 "Wan5",
-                "Tong9",
-                "Tong1",
-                "Tiao9",
-                "Tong1",
-                "SanYuan_G",
-                "Wan4",
                 "Wan7",
-                "SanYuan_R",
-                "Wan3",
+                "Wan9",
+                "Tiao9",
+                "Wan7",
+                "Tiao9",
+                "Wan9"
+            ],
+            "discarded": [
+                "Tong8",
+                "Tiao3",
+                "SanYuan_W",
+                "Tong5",
+                "Tiao3",
+                "Feng_E",
+                "Tong3",
+                "Feng_S",
                 "Wan1",
-                "Wan2",
-                "Feng_W",
+                "Wan6",
+                "Tiao7",
+                "Tiao7",
+                "Feng_S",
+                "Tong6",
+                "Wan6",
+                "Wan4",
                 "Feng_W"
             ],
             "melds": []
         },
-        "3": {
-            "Wind": "北",
-            "Riichi": "true",
-            "discarded": [
-                "Tiao8",
-                "Wan9",
-                "Tiao6",
-                "Tiao3",
-                "Wan9",
-                "SanYuan_G",
-                "Tiao9",
-                "Wan8",
-                "Wan5",
-                "Feng_E",
-                "Feng_N",
-                "Wan1",
-                "Wan2"
-            ],
-            "melds": []
-        },
-        "4": {
-            "Wind": "東",
+        "2": {
+            "Wind": "Feng_N",
             "Riichi": "false",
             "discarded": [
+                "Wan8",
+                "Tong1",
+                "Tiao2",
+                "Tiao1",
+                "Tong8",
                 "Wan9",
-                "Tiao7",
-                "Tiao9",
-                "Wan8",
-                "Wan5",
-                "SanYuan_R",
-                "SanYuan_R",
-                "Wan8",
+                "Tiao1",
                 "Wan1",
-                "Wan7",
-                "SanYuan_G",
-                "Wan6",
-                "Wan6",
-                "Feng_W",
+                "Tiao7",
+                "Wan3",
+                "Tiao3",
+                "Feng_E",
+                "SanYuan_R",
+                "Feng_N",
+                "Tiao9",
+                "Wan4",
                 "Feng_N"
             ],
             "melds": [
-                "Tiao3",
-                "Feng_E",
-                "Feng_E",
-                "Feng_E"
+                "Wan8",
+                "Wan7",
+                "Wan6"
             ]
+        },
+        "3": {
+            "Wind": "Feng_E",
+            "Riichi": "false",
+            "discarded": [
+                "SanYuan_W",
+                "Tiao1",
+                "Tong3",
+                "Tong3",
+                "SanYuan_R",
+                "Feng_N",
+                "Tong8",
+                "Tong2",
+                "Feng_E",
+                "SanYuan_R",
+                "Wan5",
+                "Tiao9",
+                "Feng_E",
+                "SanYuan_G",
+                "Feng_S",
+                "Wan1",
+                "Feng_S",
+                "Feng_W"
+            ],
+            "melds": [
+                "Wan3",
+                "Wan3",
+                "Wan3"
+            ]
+        },
+        "4": {
+            "Wind": "Feng_S",
+            "Riichi": "true",
+            "discarded": [
+                "Tong5",
+                "Tong6",
+                "SanYuan_W",
+                "Tong3",
+                "Wan4",
+                "Tong7",
+                "Tong2",
+                "Tiao4",
+                "Wan8",
+                "Wan2",
+                "Wan2",
+                "SanYuan_G",
+                "Wan5",
+                "Feng_N",
+                "Wan2",
+                "Wan6",
+                "SanYuan_G",
+                "Feng_W"
+            ],
+            "melds": []
         }
     }
 }
