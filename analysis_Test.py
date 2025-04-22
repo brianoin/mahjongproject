@@ -179,7 +179,16 @@ def predict_tenpai(data, remaining_tiles, self_hand):
 
 # 危險度估算 + 最安全出牌
 def estimate_danger(self_hand, tenpai_info):
+
+    def get_phase_weight(remaining_tiles):
+        if remaining_tiles >= 40:
+            return 0.8
+        elif remaining_tiles < 40 and remaining_tiles >= 15:
+            return 1.0
+        else:
+            return 1.2
     danger_scores = {}
+    phase_weight = get_phase_weight(remaining_tiles)
 
     for tile in self_hand:
         score = 0.0
@@ -187,10 +196,19 @@ def estimate_danger(self_hand, tenpai_info):
         # 三家皆計算
         for pid in ["p2", "p3", "p4"]:
             score += tenpai_info[pid]["wait_tiles"].get(tile, 0.0)
+            base_risk = tenpai_info[pid]["wait_tiles"].get(tile,, 0.0)
 
-        # 平均（除以3家）
-        score /= 3
+            #加上對手等級判斷
+            level = players_levels.get(pid, "newbie")
+            if level == "expert":
+                base_risk *= 1.3
+            elif level = "newbie":
+                base_risk *= 0.9
+            
+            score += base_risk
 
+        # 三家平均後，乘上階段關係
+        score = (score/ 3.0) * phase_weight
         danger_scores[tile] = round(score, 3)
 
     # 推薦最安全的2~3張牌（最低分）
