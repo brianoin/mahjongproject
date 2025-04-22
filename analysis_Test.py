@@ -176,9 +176,27 @@ def predict_tenpai(data, remaining_tiles, self_hand):
 
     return tenpai_info
 
+data = read_game_data()
+
+#計算玩家等級
+def classify_player_level(player):
+    melds_count = len(player.get("melds", []))
+    has_riichi = player.get("Riichi", False)
+
+    if has_riichi and melds_count == 0:
+        return "expert"
+    elif melds_count >= 2:
+        return "intermediate"
+    else :
+        return "newbie"
+    
+player_levels = {}
+for pid in ["2","3","4"]:
+    player_data = data["players"][pid]
+    player_levels[f"p{pid}"] = classify_player_level(player_data)
 
 # 危險度估算 + 最安全出牌
-def estimate_danger(self_hand, tenpai_info):
+def estimate_danger(self_hand, tenpai_info, total_remaining, player_levels):
 
     #計算前中後期
     def get_phase_weight(remaining_tiles):
@@ -189,7 +207,7 @@ def estimate_danger(self_hand, tenpai_info):
         else:
             return 1.2
     danger_scores = {}
-    phase_weight = get_phase_weight(remaining_tiles)
+    phase_weight = get_phase_weight(total_remaining)
 
     for tile in self_hand:
         score = 0.0
@@ -197,13 +215,13 @@ def estimate_danger(self_hand, tenpai_info):
         # 三家皆計算
         for pid in ["p2", "p3", "p4"]:
             score += tenpai_info[pid]["wait_tiles"].get(tile, 0.0)
-            base_risk = tenpai_info[pid]["wait_tiles"].get(tile,, 0.0)
+            base_risk = tenpai_info[pid]["wait_tiles"].get(tile, 0.0)
 
             #加上對手等級判斷
-            level = players_levels.get(pid, "newbie")
+            level = player_levels.get(pid, "newbie")
             if level == "expert":
                 base_risk *= 1.3
-            elif level = "newbie":
+            elif level == "newbie":
                 base_risk *= 0.9
             
             score += base_risk
@@ -223,8 +241,8 @@ def estimate_danger(self_hand, tenpai_info):
 
 # 主程式
 def main():
-    file_path = "D:/mahjongproject/game_data.json"
-    output_path = "D:/mahjongproject/analysis.json"
+    file_path = r"C:/mahjongproject/game_data.json"
+    output_path = r"C:/mahjongproject/analysis.json"
 
     data = read_game_data(file_path)
 
@@ -250,11 +268,13 @@ def main():
             
     tenpai_info = predict_tenpai(data, remaining_tiles, self_hand)
     danger_info = estimate_danger(self_hand, tenpai_info)
+    total_remaining = sum(remaining_tiles.values())
 
     output_data = {
         "remaining_tiles": remaining_tiles,
         "tenpai_prediction": tenpai_info,
         "danger_estimation": danger_info,
+        "total_remaining" : total_remaining
     }
 
     with open(output_path, "w", encoding="utf-8") as f:
