@@ -180,6 +180,7 @@ def predict_tenpai(data, remaining_tiles, self_hand):
 # 危險度估算 + 最安全出牌
 def estimate_danger(self_hand, tenpai_info):
 
+    #計算前中後期
     def get_phase_weight(remaining_tiles):
         if remaining_tiles >= 40:
             return 0.8
