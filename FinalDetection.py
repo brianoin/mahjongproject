@@ -9,7 +9,7 @@ import os
 class MahjongDetection:
     def __init__(self, mid_model_path, tiles_model_path, json_file_path):
         """初始化 YOLO 模型"""
-        self.round_wind = "東"
+        self.round_wind = "Feng_E"
         self.mid_model = YOLO(mid_model_path)  # 行動指示燈模型
         self.tiles_model = YOLO(tiles_model_path)  # 麻將牌偵測模型
         self.players_winds = {} #玩家風位儲存
@@ -136,11 +136,7 @@ class MahjongDetection:
             1: {
                 'player1_hand': {'region': frame[900:1070, 200:1460-self.melds_length_hand*90].copy(), 'description': '1_hand'},
                 'player1_discard': {'region': frame[540:770, 750:1150].copy(), 'description': '1_discard'},
-                'player1_melds': {
-                    #前兩個不動。最一開始四個為一組 x越來越小 y不變 1810 910 1475 1485 1260 
-                    'src_points': [(1810, 910), (1840, 1045), (1475-self.melds_length*75, 910), (1485-self.melds_length*75, 1045)],
-                    'description': '1_melds'
-                },
+                'player1_melds': {'region': frame[940:1050, 1495-self.melds_length*90:1830].copy(), 'description': '1_melds'},
             },
             2: {
                 'player2_discard': {'region': frame[270:550, 1130:1410].copy(), 'description': '2_discard'},
@@ -152,11 +148,7 @@ class MahjongDetection:
             },
             3: {
                 'player3_discard': {'region': frame[110:310, 770:1140].copy(), 'description': '3_discard'},
-                'player3_melds': {
-                    #前兩個不動。最一開始四個為一組 x越來越大 y不變 755 760 140/3 47
-                    'src_points': [(395, 30), (375, 110), (620+self.melds_length*50, 30), (615+self.melds_length*50, 110)],
-                    'description': '3_melds'
-                },
+                'player3_melds':{'region': frame[30:95, 385:605+self.melds_length*60].copy(), 'description': '3_melds'},
             },
             4: {
                 'player4_discard': {'region': frame[270:570, 520:780].copy(), 'description': '4_discard'},
@@ -172,7 +164,7 @@ class MahjongDetection:
             for key in Regions_Tiles[player_key]:
                 region_data = Regions_Tiles[player_key][key]
                 
-                if 'src_points' in region_data:  # 如果是 melds 區域，需要進行透視變換
+                if player_key in [2, 4] and 'src_points' in region_data:  # 如果是 melds 區域，需要進行透視變換
                     # 取得透視變換需要的 src_points
                     src_points = region_data['src_points']
                     
@@ -272,7 +264,7 @@ class MahjongDetection:
     
     def determine_winds(self, banker):
         """根据庄家描述确定所有玩家的风位"""
-        wind_order = ["東", "南", "西", "北"]
+        wind_order = ["Feng_E", "Feng_S", "Feng_W", "Feng_N"]
 
         # 将庄家的 description 转换为整数
         dealer_index = banker - 1  # '1' -> 0, '2' -> 1, '3' -> 2, '4' -> 3
