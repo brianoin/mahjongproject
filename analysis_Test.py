@@ -78,7 +78,40 @@ def calculate_remaining_tiles(all_tiles, known_tiles):
     remaining_tiles = {tile: count for tile, count in remaining_tiles.items() if count > 0}
     return remaining_tiles
 
-# 推測對手是否聽牌以及可能的等牌
+def analyze_discard_behavior(player):
+    discards = player.get("discarded", [])
+    melds = player.get("melds", [])
+
+    num_middle_discards = 0  # 中張牌（4~6）
+    num_terminal_discards = 0  # 1、9
+    num_honor_discards = 0  # 字牌
+
+    for t in discards:
+        if not any(c.isdigit() for c in t):
+            num_honor_discards += 1
+            continue
+        n = int(''.join(filter(str.isdigit, t)))
+        if n in [1, 9]:
+            num_terminal_discards += 1
+        elif n in [4, 5, 6]:
+            num_middle_discards += 1
+
+    multiplier = 1.0
+
+    if num_middle_discards >= 3:
+        multiplier *= 1.2  # 中張都丟出 → 可能已經形聽
+    if num_honor_discards >= 2:
+        multiplier *= 1.1  # 字牌都打掉 → 防守少，傾向攻擊
+    if len(melds) >= 2:
+        multiplier *= 1.2  # 多副露 → 快速型
+    elif len(melds) == 1:
+        multiplier *= 1.05
+    elif len(melds) == 0 and not player.get("Riichi", False):
+        multiplier *= 0.85  # 沒副露、沒立直 → 機率降低
+
+    return multiplier
+
+
 def predict_tenpai(data, remaining_tiles, self_hand):
     tenpai_info = {}
     for pid in ["2", "3", "4"]:
@@ -87,16 +120,17 @@ def predict_tenpai(data, remaining_tiles, self_hand):
         player_seat_wind = player.get("Wind")
         discarded_set = set(player.get("discarded", []))
         melds = player.get("melds", [])
-        is_tenpai = player.get("Riichi", False) or len(melds) > 0  # 若立直或副露，視為可能聽牌
+        is_tenpai = player.get("Riichi", False) or len(melds) > 0
 
         wait_tiles = {}
+        behavior_multiplier = analyze_discard_behavior(player)
 
         if is_tenpai:
             for tile, count in remaining_tiles.items():
                 if tile in discarded_set:
-                    continue  # 已經打過的不可能是等牌
+                    continue  # 已打過的牌不可能是等牌
 
-                score = count
+                score = count  # 基礎分數為剩餘張數
 
                 suit_count = {"Wan": 0, "Tong": 0, "Tiao": 0}
                 for t in player.get("discarded", []):
@@ -106,37 +140,35 @@ def predict_tenpai(data, remaining_tiles, self_hand):
                         suit_count["Tong"] += 1
                     elif t.startswith("Tiao"):
                         suit_count["Tiao"] += 1
-                        
+
                 score *= adjust_based_on_sequence_rules(tile, player.get("discarded", []))
 
-                # 自風與場風加成
+                # 自風與場風加成（字牌）
                 if tile.startswith("Feng"):
                     if tile == round_wind and tile == player_seat_wind:
                         score *= 1.15 * 1.15
-                    elif tile == player_seat_wind:
-                        score *= 1.15
-                    elif tile == round_wind:
+                    elif tile == player_seat_wind or tile == round_wind:
                         score *= 1.15
                     else:
                         score *= 0.8
 
-                # 根據花色降低危險度
-                tile_suit = ''.join(filter(str.isalpha, tile))  # e.g. Wan, Tong, Tiao
+                # 花色丟棄越多，該花色越不可能是等牌
+                tile_suit = ''.join(filter(str.isalpha, tile))
                 suit_discard_count = suit_count.get(tile_suit, 0)
                 suit_multiplier = max(0.5, 1.0 - 0.035 * suit_discard_count)
                 score *= suit_multiplier
 
-                # 每次打出都減少
+                # 打掉越多張 → 等這張的機率越小
                 discarded_count = 4 - remaining_tiles.get(tile, 0)
                 discard_multiplier = max(0.0, 1.0 - 0.1 * discarded_count)
                 score *= discard_multiplier
-                
+
+                # 字牌剩兩張以上 → 增加危險
                 is_honor_tile = tile.startswith("Feng") or tile.startswith("SanYuan")
                 if is_honor_tile and remaining_tiles.get(tile, 0) >= 2:
                     score *= 1.25
-                    
-                # 副露同花色 → x1.2
-                tile_suit = ''.join(filter(str.isalpha, tile))
+
+                # 副露同花色 → 增加該花色危險度
                 meld_suits = []
                 for m in melds:
                     if isinstance(m, str):
@@ -146,6 +178,7 @@ def predict_tenpai(data, remaining_tiles, self_hand):
                 if tile_suit in meld_suits:
                     score *= 1.15
 
+                # 數字位置調整
                 if any(c.isdigit() for c in tile):
                     num = int(''.join(filter(str.isdigit, tile)))
                     if num in [4, 5, 6]:
@@ -156,21 +189,18 @@ def predict_tenpai(data, remaining_tiles, self_hand):
                         score *= 1.1
                     elif num in [1, 9]:
                         score *= 0.85
-                else:
-                    score *= 1  # 字牌
 
-                # 在自家手牌中 → x0.8
-                # if tile in self_hand:
-                #     score *= 1.2
+                # 加入棄牌行為調整倍率
+                score *= behavior_multiplier
 
                 wait_tiles[tile] = round(score, 2)
 
-            # 只保留前 4 高的等牌
+            # 只保留前 4 張危險最高的等牌
             danger_tiles = dict(sorted(wait_tiles.items(), key=lambda item: item[1], reverse=True)[:4])
 
         tenpai_info[f"p{pid}"] = {
             "is_tenpai": is_tenpai,
-            "danger_tiles" : danger_tiles,
+            "danger_tiles": danger_tiles,
             "wait_tiles": wait_tiles
         }
 
@@ -178,66 +208,65 @@ def predict_tenpai(data, remaining_tiles, self_hand):
 
 data = read_game_data()
 
-#計算玩家等級
-def classify_player_level(player):
-    melds_count = len(player.get("melds", []))
-    has_riichi = player.get("Riichi", False)
+def calculate_tile_value(tile, hand_tiles):
+    if not any(c.isdigit() for c in tile):
+        return 0  # 字牌基本不算搭子重要性
 
-    if has_riichi and melds_count == 0:
-        return "expert"
-    elif melds_count >= 2:
-        return "intermediate"
-    else :
-        return "newbie"
-    
-player_levels = {}
-for pid in ["2","3","4"]:
-    player_data = data["players"][pid]
-    player_levels[f"p{pid}"] = classify_player_level(player_data)
+    num = int(''.join(filter(str.isdigit, tile)))
+    suit = ''.join(filter(str.isalpha, tile))
+
+    tile_nums_in_hand = [
+        int(''.join(filter(str.isdigit, t)))
+        for t in hand_tiles
+        if ''.join(filter(str.isalpha, t)) == suit
+    ]
+
+    value = 0
+    if (num - 2) in tile_nums_in_hand:
+        value += 0.5
+    if (num - 1) in tile_nums_in_hand:
+        value += 1.0
+    if (num + 1) in tile_nums_in_hand:
+        value += 1.0
+    if (num + 2) in tile_nums_in_hand:
+        value += 0.5
+
+    return value
 
 # 危險度估算 + 最安全出牌
-def estimate_danger(self_hand, tenpai_info, total_remaining, player_levels):
-
-    #計算前中後期
+def estimate_danger(self_hand, tenpai_info, total_remaining):
     def get_phase_weight(remaining_tiles):
         if remaining_tiles >= 40:
             return 0.8
-        elif remaining_tiles < 40 and remaining_tiles >= 15:
+        elif remaining_tiles >= 15:
             return 1.0
         else:
             return 1.2
-    danger_scores = {}
+
     phase_weight = get_phase_weight(total_remaining)
+    danger_scores = {"p2": {}, "p3": {}, "p4": {}}
+    safe_discards = {"p2": [], "p3": [], "p4": []}
 
-    for tile in self_hand:
-        score = 0.0
-
-        # 三家皆計算
-        for pid in ["p2", "p3", "p4"]:
-            score += tenpai_info[pid]["wait_tiles"].get(tile, 0.0)
+    for pid in ["p2", "p3", "p4"]:
+        for tile in self_hand:
             base_risk = tenpai_info[pid]["wait_tiles"].get(tile, 0.0)
+            final_score = base_risk * phase_weight
 
-            #加上對手等級判斷
-            level = player_levels.get(pid, "newbie")
-            if level == "expert":
-                base_risk *= 1.3
-            elif level == "newbie":
-                base_risk *= 0.9
-            
-            score += base_risk
+            # 加入自己手牌連結性影響
+            tile_value = calculate_tile_value(tile, self_hand)
+            final_score *= (1 + 0.2 * tile_value)
 
-        # 三家平均後，乘上階段關係
-        score = (score/ 3.0) * phase_weight
-        danger_scores[tile] = round(score, 3)
+            danger_scores[pid][tile] = round(final_score, 3)
 
-    # 推薦最安全的2~3張牌（最低分）
-    sorted_tiles = sorted(danger_scores.items(), key=lambda x: x[1])
-    safe_discards = [tile for tile, _ in sorted_tiles[:3]]
+        # 每家選最安全的 3 張牌
+        sorted_tiles = sorted(danger_scores[pid].items(), key=lambda x: x[1])
+        safe_discards[pid] = [tile for tile, _ in sorted_tiles[:3]]
 
     return {
         "safe_discards": safe_discards,
         "danger_score": danger_scores
     }
+
 
 # 主程式
 def main():
