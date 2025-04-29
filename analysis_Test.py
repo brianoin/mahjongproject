@@ -1,5 +1,6 @@
 import json
 from collections import defaultdict
+import time
 
 # 讀取遊戲資料
 def read_game_data(file_path):
@@ -112,7 +113,8 @@ def analyze_discard_behavior(player):
     return multiplier
 
 
-def predict_tenpai(data, remaining_tiles, self_hand):
+def predict_tenpai(data, remaining_tiles):
+
     tenpai_info = {}
     for pid in ["2", "3", "4"]:
         player = data["players"][pid]
@@ -120,12 +122,35 @@ def predict_tenpai(data, remaining_tiles, self_hand):
         player_seat_wind = player.get("Wind")
         discarded_set = set(player.get("discarded", []))
         melds = player.get("melds", [])
-        is_tenpai = player.get("Riichi", False) or len(melds) > 0
+        is_riichi = player.get("Riichi", False)
+        meld_count = len(melds)
+
+        is_riichi = str(is_riichi).lower() == "true"
 
         wait_tiles = {}
+
+        #分析棄牌行為倍率
         behavior_multiplier = analyze_discard_behavior(player)
 
-        if is_tenpai:
+        #聽牌機率估算
+        base_prob = 0
+        if is_riichi:
+            tenpai_prob = 100
+        else:
+            tenpai_prob = base_prob
+            if meld_count >= 6:
+                tenpai_prob += 30
+            elif meld_count == 3:
+                tenpai_prob += 15
+            elif behavior_multiplier > 1.1:
+                tenpai_prob += 20
+            elif behavior_multiplier < 0.9:
+                tenpai_prob -= 10
+            tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
+
+        #高機率聽牌才分析等牌
+        wait_tiles = {}
+        if tenpai_prob >= 50:
             for tile, count in remaining_tiles.items():
                 if tile in discarded_set:
                     continue  # 已打過的牌不可能是等牌
@@ -192,21 +217,16 @@ def predict_tenpai(data, remaining_tiles, self_hand):
 
                 # 加入棄牌行為調整倍率
                 score *= behavior_multiplier
-
                 wait_tiles[tile] = round(score, 2)
 
-            # 只保留前 4 張危險最高的等牌
-            danger_tiles = dict(sorted(wait_tiles.items(), key=lambda item: item[1], reverse=True)[:4])
 
         tenpai_info[f"p{pid}"] = {
-            "is_tenpai": is_tenpai,
-            "danger_tiles": danger_tiles,
+            "is_riichi": is_riichi,
+            "tenpai_probability":tenpai_prob,
             "wait_tiles": wait_tiles
         }
 
     return tenpai_info
-
-data = read_game_data()
 
 def calculate_tile_value(tile, hand_tiles):
     if not any(c.isdigit() for c in tile):
@@ -234,44 +254,53 @@ def calculate_tile_value(tile, hand_tiles):
     return value
 
 # 危險度估算 + 最安全出牌
-def estimate_danger(self_hand, tenpai_info, total_remaining):
-    def get_phase_weight(remaining_tiles):
-        if remaining_tiles >= 40:
+def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
+    def get_phase_weight(total_tiles):
+        if total_tiles >= 40:
             return 0.8
-        elif remaining_tiles >= 15:
+        elif total_tiles >= 15:
             return 1.0
         else:
             return 1.2
 
-    phase_weight = get_phase_weight(total_remaining)
-    danger_scores = {"p2": {}, "p3": {}, "p4": {}}
-    safe_discards = {"p2": [], "p3": [], "p4": []}
+    phase_weight = get_phase_weight(total_tiles)
+    overall_danger = {}
 
-    for pid in ["p2", "p3", "p4"]:
-        for tile in self_hand:
+    for tile in self_hand:
+        total_risk = 0.0
+        for pid in ["p2", "p3", "p4"]:
+            if pid not in tenpai_info:
+                continue
+
             base_risk = tenpai_info[pid]["wait_tiles"].get(tile, 0.0)
-            final_score = base_risk * phase_weight
+            total_risk += base_risk
 
-            # 加入自己手牌連結性影響
-            tile_value = calculate_tile_value(tile, self_hand)
-            final_score *= (1 + 0.2 * tile_value)
+        total_risk *= phase_weight
 
-            danger_scores[pid][tile] = round(final_score, 3)
+        tile_value = calculate_tile_value(tile, self_hand)
 
-        # 每家選最安全的 3 張牌
-        sorted_tiles = sorted(danger_scores[pid].items(), key=lambda x: x[1])
-        safe_discards[pid] = [tile for tile, _ in sorted_tiles[:3]]
+        # 如果這張牌是重要搭子，則提高風險分數（不想輕易打掉）
+        if tile_value >= 2.0:
+            total_risk *= 1.5  # 重要搭子 → 危險值上升
+        elif tile_value >= 1.5:
+            total_risk *= 1.3
+        else:
+            total_risk *= (1 + 0.2 * tile_value)  # 原本的微調
+
+        overall_danger[tile] = round(total_risk, 3)
+
+    sorted_tiles = sorted(overall_danger.items(), key=lambda x: x[1])
 
     return {
-        "safe_discards": safe_discards,
-        "danger_score": danger_scores
+        "overall_danger_scores": overall_danger
     }
+
 
 
 # 主程式
 def main():
-    file_path = r"C:/mahjongproject/game_data.json"
-    output_path = r"C:/mahjongproject/analysis.json"
+    file_path = "C:/mahjongproject/game_data.json"
+    output_path = "C:/mahjongproject/analysis.json"
 
     data = read_game_data(file_path)
 
@@ -295,20 +324,20 @@ def main():
         else:
             self_hand.append(tile)
             
-    tenpai_info = predict_tenpai(data, remaining_tiles, self_hand)
-    danger_info = estimate_danger(self_hand, tenpai_info)
-    total_remaining = sum(remaining_tiles.values())
+    tenpai_info = predict_tenpai(data, remaining_tiles)
+    total_tiles = data.get("Total_tiles", [])
+    danger_info = estimate_overall_danger(self_hand, tenpai_info, total_tiles)
 
     output_data = {
         "remaining_tiles": remaining_tiles,
         "tenpai_prediction": tenpai_info,
-        "danger_estimation": danger_info,
-        "total_remaining" : total_remaining
+        "danger_estimation": {"danger_score": danger_info["overall_danger_scores"]},
     }
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output_data, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
-    main()
-
+    while True:
+        main()
+        time.sleep(1)
