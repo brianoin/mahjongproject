@@ -99,16 +99,18 @@ def analyze_discard_behavior(player):
 
     multiplier = 1.0
 
-    if num_middle_discards >= 3:
-        multiplier *= 1.2  # 中張都丟出 → 可能已經形聽
-    if num_honor_discards >= 2:
-        multiplier *= 1.1  # 字牌都打掉 → 防守少，傾向攻擊
-    if len(melds) >= 6:
-        multiplier *= 1.2  # 多副露 → 快速型
-    elif len(melds) == 3:
-        multiplier *= 1.05
+    if len(melds) >=  12:
+        multiplier += 3.0  # 多副露 → 快速型
+    elif len(melds) < 12 and len(melds) >= 9:
+        multiplier += 1.6
+    elif len(melds) < 9 and len(melds) >= 6:
+        multiplier += 1.2
+    elif len(melds) <= 4:
+        multiplier += 1.0
     elif len(melds) == 0 and not player.get("Riichi", False):
-        multiplier *= 0.85  # 沒副露、沒立直 → 機率降低
+        multiplier -= 0.  # 沒副露、沒立直 → 機率降低
+
+    multiplier += num_middle_discards*0.2  # 中張都丟出 → 可能已經形聽
 
     return multiplier
 
@@ -137,25 +139,8 @@ def predict_tenpai(data, remaining_tiles):
         if is_riichi:
             tenpai_prob = 100
         else:
-            tenpai_prob += base_prob
-            if meld_count >= 6:
-                tenpai_prob += 30
-            elif meld_count == 3:
-                tenpai_prob += 15
-            elif behavior_multiplier >= 1.5:
-                tenpai_prob += 40
-            elif behavior_multiplier < 1.5 and behavior_multiplier > 1.3:
-                tenpai_prob += 35 
-            elif behavior_multiplier >= 1.3:
-                tenpai_prob += 30
-            elif behavior_multiplier < 1.3 and behavior_multiplier > 1.1:
-                tenpai_prob += 25 
-            elif behavior_multiplier >= 1.1:
-                tenpai_prob += 20
-            elif behavior_multiplier < 1.1 and behavior_multiplier > 0.9:
-                tenpai_prob += 15 
-            elif behavior_multiplier <= 0.9:
-                tenpai_prob -= 10
+            tenpai_prob = base_prob
+            tenpai_prob = behavior_multiplier*25
             tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
 
         #高機率聽牌才分析等牌
