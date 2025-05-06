@@ -103,9 +103,9 @@ def analyze_discard_behavior(player):
         multiplier *= 1.2  # 中張都丟出 → 可能已經形聽
     if num_honor_discards >= 2:
         multiplier *= 1.1  # 字牌都打掉 → 防守少，傾向攻擊
-    if len(melds) >= 2:
+    if len(melds) >= 6:
         multiplier *= 1.2  # 多副露 → 快速型
-    elif len(melds) == 1:
+    elif len(melds) == 3:
         multiplier *= 1.05
     elif len(melds) == 0 and not player.get("Riichi", False):
         multiplier *= 0.85  # 沒副露、沒立直 → 機率降低
@@ -137,20 +137,30 @@ def predict_tenpai(data, remaining_tiles):
         if is_riichi:
             tenpai_prob = 100
         else:
-            tenpai_prob = base_prob
+            tenpai_prob += base_prob
             if meld_count >= 6:
                 tenpai_prob += 30
             elif meld_count == 3:
                 tenpai_prob += 15
-            elif behavior_multiplier > 1.1:
+            elif behavior_multiplier >= 1.5:
+                tenpai_prob += 40
+            elif behavior_multiplier < 1.5 and behavior_multiplier > 1.3:
+                tenpai_prob += 35 
+            elif behavior_multiplier >= 1.3:
+                tenpai_prob += 30
+            elif behavior_multiplier < 1.3 and behavior_multiplier > 1.1:
+                tenpai_prob += 25 
+            elif behavior_multiplier >= 1.1:
                 tenpai_prob += 20
-            elif behavior_multiplier < 0.9:
+            elif behavior_multiplier < 1.1 and behavior_multiplier > 0.9:
+                tenpai_prob += 15 
+            elif behavior_multiplier <= 0.9:
                 tenpai_prob -= 10
             tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
 
         #高機率聽牌才分析等牌
-        wait_tiles = {}
-        if tenpai_prob >= 50:
+ 
+        if tenpai_prob >= 0:
             for tile, count in remaining_tiles.items():
                 if tile in discarded_set:
                     continue  # 已打過的牌不可能是等牌
@@ -209,7 +219,7 @@ def predict_tenpai(data, remaining_tiles):
                     if num in [4, 5, 6]:
                         score *= 1.25
                     elif num in [3, 7]:
-                        score *= 1.75
+                        score *= 1.2
                     elif num in [2, 8]:
                         score *= 1.1
                     elif num in [1, 9]:
@@ -223,7 +233,8 @@ def predict_tenpai(data, remaining_tiles):
         tenpai_info[f"p{pid}"] = {
             "is_riichi": is_riichi,
             "tenpai_probability":tenpai_prob,
-            "wait_tiles": wait_tiles
+            "wait_tiles": wait_tiles,
+            "behavior_multiplier" :behavior_multiplier
         }
 
     return tenpai_info
@@ -275,6 +286,7 @@ def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
             base_risk = tenpai_info[pid]["wait_tiles"].get(tile, 0.0)
             total_risk += base_risk
 
+        total_risk /= 3
         total_risk *= phase_weight
 
         tile_value = calculate_tile_value(tile, self_hand)
@@ -289,11 +301,10 @@ def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
 
         overall_danger[tile] = round(total_risk, 3)
 
-    sorted_tiles = sorted(overall_danger.items(), key=lambda x: x[1])
+    
 
     return {
         "overall_danger_scores": overall_danger,
-        "danger tiles": sorted_tiles
     }
 
 
