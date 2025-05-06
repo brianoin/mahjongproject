@@ -6,14 +6,14 @@ import time
 def read_game_data(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         return json.load(f)
-
+    
 # 提取所有玩家的已知牌
 def extract_known_tiles(data):
     known_tiles = []
     dora_tiles = [tile for tile in data.get("dora", []) if tile != "back"]
     known_tiles += dora_tiles
     for pid in ["1", "2", "3", "4"]:
-        player = data["players"][pid]
+        player = data["players"][pid] 
         known_tiles += player.get("discarded", [])
         # known_tiles += player.get("hand", [])
         
@@ -292,16 +292,15 @@ def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
     sorted_tiles = sorted(overall_danger.items(), key=lambda x: x[1])
 
     return {
-        "overall_danger_scores": overall_danger
+        "overall_danger_scores": overall_danger,
+        "danger tiles": sorted_tiles
     }
-
 
 
 # 主程式
 def main():
     file_path = "C:/mahjongproject/game_data.json"
     output_path = "C:/mahjongproject/analysis.json"
-
     data = read_game_data(file_path)
 
     all_tiles = {
