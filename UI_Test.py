@@ -225,7 +225,7 @@ class TransparentOverlay(QtWidgets.QWidget):
                
     def load_analysis_data(self):
         try:
-            with open("C:/mahjongproject/analysis.json", "r", encoding="utf-8") as file:
+            with open(r"D:/mahjongproject/analysis.json", "r", encoding="utf-8") as file:
                 data = json.load(file)
 
                 self.chances = {
@@ -243,7 +243,7 @@ class TransparentOverlay(QtWidgets.QWidget):
                         ]
                 for i in range(len(safe_tiles)):
                     tile_name = safe_tiles[i]
-                    tile_path = os.path.join("C:/mahjongproject/MahJongPicture", f"{tile_name}.png")
+                    tile_path = os.path.join("D:/mahjongproject/MahJongPicture", f"{tile_name}.png")
                     if os.path.exists(tile_path):
                             pixmap = QtGui.QPixmap(tile_path).scaled(25, 40, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
                             self.recommend_tile_imgs[i].setPixmap(pixmap)
@@ -277,7 +277,7 @@ class TransparentOverlay(QtWidgets.QWidget):
                         # 顯示危險牌
                         for i in range(len(self.filtered_tiles)):
                             tile_name = self.filtered_tiles[i]
-                            tile_path = os.path.join("C:/mahjongproject/MahJongPicture", f"{tile_name}.png")
+                            tile_path = os.path.join("D:/mahjongproject/MahJongPicture", f"{tile_name}.png")
                             if os.path.exists(tile_path):
                                 pixmap = QtGui.QPixmap(tile_path).scaled(25, 40, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
                                 self.image_tile_img[player][i].setPixmap(pixmap)
@@ -306,8 +306,8 @@ class TransparentOverlay(QtWidgets.QWidget):
 
 def start_detection():
     global process,process1
-    process = subprocess.Popen(["python", r"C:/mahjongproject/FinalDetection (1).py"])
-    process1 = subprocess.Popen(["python", r"C:/mahjongproject/analysis_Test.py"])
+    process = subprocess.Popen(["python", r"D:/mahjongproject/FinalDetection.py"])
+    process1 = subprocess.Popen(["python", r"D:/mahjongproject/analysis_Test2.py"])
 
 def stop_detection():
     global process
@@ -319,3 +319,5 @@ if __name__ == '__main__':
     overlay = TransparentOverlay()
     overlay.show()
     sys.exit(app.exec_())
+
+
