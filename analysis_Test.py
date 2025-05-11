@@ -140,7 +140,9 @@ def predict_tenpai(data, remaining_tiles):
             tenpai_prob = 100
         else:
             tenpai_prob = base_prob
-            tenpai_prob = behavior_multiplier*25
+            turn = len(player.get("discarded", []))  # 巡目（出過幾張牌）
+            turn_factor = min(turn / 18, 1.0)  # 正規化：第18巡以上視為1.0
+            tenpai_prob = behavior_multiplier * 25 * (0.6 + 0.6 * turn_factor)
             tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
 
         #高機率聽牌才分析等牌
@@ -277,12 +279,14 @@ def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
         tile_value = calculate_tile_value(tile, self_hand)
 
         # 如果這張牌是重要搭子，則提高風險分數（不想輕易打掉）
-        if tile_value >= 2.0:
-            total_risk *= 1.5  # 重要搭子 → 危險值上升
+        if tile_value >= 2.5:
+            total_risk *= 1.9
+        elif tile_value >= 2.0:
+            total_risk *= 1.6
         elif tile_value >= 1.5:
             total_risk *= 1.3
-        else:
-            total_risk *= (1 + 0.2 * tile_value)  # 原本的微調
+        elif tile_value >= 1.0:
+            total_risk *= 1.1
 
         overall_danger[tile] = round(total_risk, 3)
 
