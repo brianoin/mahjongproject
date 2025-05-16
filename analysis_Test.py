@@ -141,9 +141,12 @@ def predict_tenpai(data, remaining_tiles):
         else:
             tenpai_prob = base_prob
             turn = len(player.get("discarded", []))  # 巡目（出過幾張牌）
-            turn_factor = min(turn / 18, 1.0)  # 正規化：第18巡以上視為1.0
-            tenpai_prob = behavior_multiplier * 25 * (0.6 + 0.6 * turn_factor)
-            tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
+            if turn == 0:
+                tenpai_prob = 0.0
+            else:
+                turn_factor = min(turn / 18, 1.0)  # 正規化：第18巡以上視為1.0
+                tenpai_prob = behavior_multiplier * 25 * (0.6 + 0.6 * turn_factor)
+                tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
 
         #高機率聽牌才分析等牌
  
@@ -216,6 +219,7 @@ def predict_tenpai(data, remaining_tiles):
                 score *= behavior_multiplier
                 wait_tiles[tile] = round(score, 2)
 
+        wait_tiles = dict(sorted(wait_tiles.items(), key=lambda x: x[1], reverse=True))
 
         tenpai_info[f"p{pid}"] = {
             "is_riichi": is_riichi,
@@ -288,9 +292,11 @@ def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
         elif tile_value >= 1.0:
             total_risk *= 1.1
 
-        overall_danger[tile] = round(total_risk, 3)
+        danger_score = max(0.0, 10.0 - total_risk)
+        overall_danger[tile] = round(danger_score, 3)
 
     
+    overall_danger = dict(sorted(overall_danger.items(), key=lambda x: x[1], reverse=True))
 
     return {
         "overall_danger_scores": overall_danger,

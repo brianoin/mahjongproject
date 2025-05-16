@@ -393,9 +393,9 @@ def capture_screen(region=None):
 
 if __name__ == "__main__":
     detector = MahjongDetection(
-        mid_model_path="D:/mahjongproject/Mid_Best.pt",
-        tiles_model_path="D:/mahjongproject/Tiles_Best.pt",
-        json_file_path="D:/mahjongproject/game_data.json"
+        mid_model_path="C:/mahjongproject/Mid_Best.pt",
+        tiles_model_path="C:/mahjongproject/Tiles_Best.pt",
+        json_file_path="C:/mahjongproject/game_data.json"
     )
     
     last_detect_time = time.time()
