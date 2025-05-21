@@ -135,8 +135,6 @@ def predict_tenpai(data, remaining_tiles):
         #分析棄牌行為倍率
         behavior_multiplier = analyze_discard_behavior(player)
 
-        #聽牌機率估算
-        base_prob = 0
         if is_riichi:
             tenpai_prob = 100
         else:
@@ -149,7 +147,13 @@ def predict_tenpai(data, remaining_tiles):
                 # 降低早巡的基礎機率，並使用更陡峭的曲線
                 base_probability = 15  # 降低基礎機率
                 turn_multiplier = turn_factor ** 1.5  # 使用指數增長
-                tenpai_prob = behavior_multiplier * base_probability * (0.3 + 0.7 * turn_multiplier)
+                tenpai_prob = behavior_multiplier * base_probability * (0.8 * turn_multiplier)
+                if (turn/6)<1:
+                    tenpai_prob*=1.25
+                elif (turn/6)<2:
+                    tenpai_prob*=2.0
+                elif (turn/6)>=2:
+                    tenpai_prob*=2.5
                 tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
 
         #高機率聽牌才分析等牌
@@ -333,8 +337,8 @@ def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
 
 # 主程式
 def main():
-    file_path = "C:/mahjongproject/game_data.json"
-    output_path = "C:/mahjongproject/analysis.json"
+    file_path = "D:/mahjongproject/game_data.json"
+    output_path = "D:/mahjongproject/analysis.json"
     data = read_game_data(file_path)
 
     all_tiles = {
