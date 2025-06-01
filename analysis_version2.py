@@ -260,35 +260,38 @@ def calculate_tile_value(tile, hand_tiles):
     value = 0.8
 
     # ===== 搭子潛力（單邊、兩邊） =====
-    if (num - 1) in suit_tiles or (num + 1) in suit_tiles:
-        value = 1.2  # 兩邊搭子優
+    if (
+        ((num + 2) in suit_tiles and (num + 1) not in suit_tiles) or 
+        ((num - 2) in suit_tiles and (num - 1) not in suit_tiles)
+    ):
+        value *= 1.15 # 中洞
+    elif (
+        (num - 1 in suit_tiles and (num - 1) not in (1, 8)) or 
+        (num + 1 in suit_tiles and (num + 1) not in (2, 9))
+    ):
+        value *= 1.2  # 兩邊搭子優
 
-    if (num - 2) in suit_tiles or (num + 2) in suit_tiles:
-        value= 1.1  # 單邊搭子
-
+    elif (
+        (num - 1 in suit_tiles and (num - 1) in (1, 8)) or 
+        (num + 1 in suit_tiles and (num + 1) in (2, 9)) 
+    ):
+        value *= 1.1  # 單邊搭子
+  
     # ===== 對子/刻子潛力 =====
     if same_tile_count == 2:
-        value = 1.3  # 對子略高一點
+        value *= 1.2  # 對子略高一點
     elif same_tile_count >= 3:
-        value= 1.5 # 刻子
+        value *= 1.4 # 刻子
 
     # ===== 順子參與判定 =====
     for offset in (-2, -1, 0):
         if all((num + offset + i) in suit_tiles for i in range(3)):
-
-
-            value = 1.25  # 比原本略加重權重
+            value *= 1.3  # 比原本略加重權重
 
     # 雙順子搭配
     if same_tile_count >= 2 and ((num - 1) in suit_tiles or (num + 1) in suit_tiles):
-        value= 1.2
-
-    # 單邊孤張弱搭子
-    if (num - 2 not in suit_tiles and num - 1 not in suit_tiles
-            and num + 1 not in suit_tiles and num + 2 in suit_tiles):
-        value *= 0.95 # 懲罰
-
-
+        value *= 1.2
+        
     return round(value, 3) 
 
         
@@ -321,7 +324,6 @@ def estimate_overall_danger(self_hand, tenpai_info, total_tiles):
 
         tile_value = calculate_tile_value(tile, self_hand)
 
-        
         total_risk *= tile_value
 
         danger_score = max(0.0, 10.0 - total_risk)
