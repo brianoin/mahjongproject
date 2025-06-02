@@ -67,7 +67,7 @@ def adjust_based_on_sequence_rules(tile, player_discards):
             related_tile = f"{suit}{related_num}"
             # 檢查是否打出過這些相關的牌
             if any(related_tile in discard for discard in player_discards):
-                adjustment *= 0.85  # 危險度下降一點
+                adjustment *= 0.9  # 危險度下降一點
 
     return adjustment
 
@@ -221,7 +221,7 @@ def predict_tenpai(data, remaining_tiles):
                     elif num in [2, 8]:
                         score *= 1.1
                     elif num in [1, 9]:
-                        score *= 0.85
+                        score *= 1.0
 
                 # 加入棄牌行為調整倍率
                 wait_tiles[tile] = round(score, 2)
@@ -241,8 +241,18 @@ def predict_tenpai(data, remaining_tiles):
 def calculate_tile_value(tile, hand_tiles):
     from collections import Counter
 
+    tile_counter = Counter(hand_tiles)
+    same_tile_count = tile_counter[tile]
+
+    value = 0.8
+    
     if not any(c.isdigit() for c in tile):
-        return 0  # 字牌不計搭子
+        # 是字牌，只考慮對子和刻子
+        if same_tile_count == 2:
+            value *= 1.3  # 字牌對子略高
+        elif same_tile_count >= 3:
+            value *= 1.6  # 字牌刻子很強
+        return round(value, 3)
 
     num = int(''.join(filter(str.isdigit, tile)))
     suit = ''.join(filter(str.isalpha, tile))
@@ -254,10 +264,7 @@ def calculate_tile_value(tile, hand_tiles):
         if ''.join(filter(str.isalpha, t)) == suit
     ])
 
-    tile_counter = Counter(hand_tiles)
-    same_tile_count = tile_counter[tile]
 
-    value = 0.8
 
     # ===== 搭子潛力（單邊、兩邊） =====
     if (
