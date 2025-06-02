@@ -103,13 +103,13 @@ def analyze_discard_behavior(player):
     if len(melds) >=  12:
         multiplier += 3.0  # 多副露 → 快速型
     elif len(melds) < 12 and len(melds) >= 9:
-        multiplier += 1.6
+        multiplier += 2.5
     elif len(melds) < 9 and len(melds) >= 6:
-        multiplier += 1.2
+        multiplier += 2.0
     elif len(melds) <= 4:
-        multiplier += 1.0
+        multiplier += 1.5
     elif len(melds) == 0 and not player.get("Riichi", False):
-        multiplier -= 0.  # 沒副露、沒立直 → 機率降低
+        multiplier += 1.0  # 沒副露、沒立直 → 機率降低
 
     multiplier += num_middle_discards*0.2  # 中張都丟出 → 可能已經形聽
 
@@ -126,7 +126,6 @@ def predict_tenpai(data, remaining_tiles):
         discarded_set = set(player.get("discarded", []))
         melds = player.get("melds", [])
         is_riichi = player.get("Riichi", False)
-        meld_count = len(melds)
 
         is_riichi = str(is_riichi).lower() == "true"
 
@@ -145,7 +144,7 @@ def predict_tenpai(data, remaining_tiles):
                 # 修改巡目係數計算方式，使早巡的機率更低
                 turn_factor = min(turn / 18, 1.0)  # 正規化：第18巡以上視為1.0
                 # 降低早巡的基礎機率，並使用更陡峭的曲線
-                base_probability = 15  # 降低基礎機率
+                base_probability = 20  # 降低基礎機率
                 turn_multiplier = turn_factor ** 1.5  # 使用指數增長
                 tenpai_prob = behavior_multiplier * base_probability * (0.8 * turn_multiplier)
                 if (turn/6)<1:
@@ -154,16 +153,16 @@ def predict_tenpai(data, remaining_tiles):
                     tenpai_prob*=2.0
                 elif (turn/6)>=2:
                     tenpai_prob*=2.5
-                tenpai_prob = max(0, min(round(tenpai_prob, 2), 100))
+                tenpai_prob = max(0, min(round(tenpai_prob, 2), 95))
 
+        candidate_tiles = {
+        tile: count for tile, count in remaining_tiles.items()
+        if tile not in discarded_set
+    }
         #高機率聽牌才分析等牌
  
-        if tenpai_prob >= 0:
-            for tile, count in remaining_tiles.items():
-                if tile in discarded_set:
-                    continue  # 已打過的牌不可能是等牌
-
-                score = count  # 基礎分數為剩餘張數
+        for tile, count in candidate_tiles.items():
+                score = (count**0.5)*2  # 基礎分數為剩餘張數
 
                 suit_count = {"Wan": 0, "Tong": 0, "Tiao": 0}
                 for t in player.get("discarded", []):
@@ -190,11 +189,6 @@ def predict_tenpai(data, remaining_tiles):
                 suit_discard_count = suit_count.get(tile_suit, 0)
                 suit_multiplier = max(0.5, 1.0 - 0.035 * suit_discard_count)
                 score *= suit_multiplier
-
-                # 打掉越多張 → 等這張的機率越小
-                discarded_count = 4 - remaining_tiles.get(tile, 0)
-                discard_multiplier = max(0.0, 1.0 - 0.1 * discarded_count)
-                score *= discard_multiplier
 
                 # 字牌剩兩張以上 → 增加危險
                 is_honor_tile = tile.startswith("Feng") or tile.startswith("SanYuan")
@@ -244,14 +238,14 @@ def calculate_tile_value(tile, hand_tiles):
     tile_counter = Counter(hand_tiles)
     same_tile_count = tile_counter[tile]
 
-    value = 0.8
+    value = 1.0
     
     if not any(c.isdigit() for c in tile):
         # 是字牌，只考慮對子和刻子
         if same_tile_count == 2:
-            value *= 1.3  # 字牌對子略高
+            value *= 1.5  # 字牌對子略高
         elif same_tile_count >= 3:
-            value *= 1.6  # 字牌刻子很強
+            value *= 1.7  # 字牌刻子很強
         return round(value, 3)
 
     num = int(''.join(filter(str.isdigit, tile)))
@@ -271,34 +265,36 @@ def calculate_tile_value(tile, hand_tiles):
         ((num + 2) in suit_tiles and (num + 1) not in suit_tiles) or 
         ((num - 2) in suit_tiles and (num - 1) not in suit_tiles)
     ):
-        value *= 1.15 # 中洞
+        value *= 1.2 # 中洞
     elif (
         (num - 1 in suit_tiles and (num - 1) not in (1, 8)) or 
         (num + 1 in suit_tiles and (num + 1) not in (2, 9))
     ):
-        value *= 1.2  # 兩邊搭子優
+        value *= 1.25  # 兩邊搭子優
 
     elif (
         (num - 1 in suit_tiles and (num - 1) in (1, 8)) or 
         (num + 1 in suit_tiles and (num + 1) in (2, 9)) 
     ):
-        value *= 1.1  # 單邊搭子
+        value *= 1.15  # 單邊搭子
   
     # ===== 對子/刻子潛力 =====
     if same_tile_count == 2:
-        value *= 1.2  # 對子略高一點
+        value *= 1.25  # 對子略高一點
     elif same_tile_count >= 3:
-        value *= 1.4 # 刻子
+        value *= 1.45 # 刻子
 
     # ===== 順子參與判定 =====
     for offset in (-2, -1, 0):
         if all((num + offset + i) in suit_tiles for i in range(3)):
-            value *= 1.3  # 比原本略加重權重
+            value *= 1.5  # 比原本略加重權重
 
     # 雙順子搭配
     if same_tile_count >= 2 and ((num - 1) in suit_tiles or (num + 1) in suit_tiles):
-        value *= 1.2
+        value *= 1.25
         
+    if value==1.0:
+        value *=0.8
     return round(value, 3) 
 
         
